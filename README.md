@@ -2,6 +2,9 @@
 
 Dieses Projekt realisiert ein **RS485-zu-CAN-Bus Gateway** auf Basis eines **ESP32 (LILYGO T-CAN485)**. Es ermöglicht die Kommunikation zwischen **Topband BMS** basierten Batteriespeichern und **Victron GX-Geräten** (Cerbo GX, MultiPlus, etc.).
 
+> **💡 Hinweis zu Node-RED:**
+> Dieses Projekt entstand ursprünglich aus einem **Node-RED Flow**. Wenn Sie statt eines ESP32 lieber eine reine Software-Lösung (z.B. auf Venus OS Large) bevorzugen, finden Sie den ursprünglichen Node-RED Flow ebenfalls in diesem Repository (siehe Datei `flow.json` oder Ordner `/nodered`).
+
 Das Gateway liest die Daten der Batterien über RS485 aus, aggregiert diese (bei Verwendung mehrerer Module) und emuliert das **Pylontech-Protokoll** auf dem VE.Can-Bus. Dadurch erkennt das Victron-System den Speicher als kompatible Batterie inkl. SOC, Spannung, Strom und dynamischen Lade-/Entladelimits.
 
 ## 🚀 Features
@@ -95,14 +98,6 @@ Damit der Victron das Gateway erkennt, muss die CAN-Geschwindigkeit angepasst we
 5.  Passen Sie bei Bedarf die Basis-Ströme (Lade-/Entladelimit) an.
 
 ✅ **Fertig!** Die RGB-LED am Board sollte nun **grün** pulsieren, und das Victron-System sollte die Batterie in der Geräteliste anzeigen.
-
----
-
-## 🧩 Node-RED Alternative
-
-Dieses Projekt entstand ursprünglich aus einem **Node-RED Flow**. Für Nutzer, die lieber mit Node-RED arbeiten oder die Logik schnell testen möchten, liegt der ursprüngliche Flow ebenfalls in diesem Repository (siehe Ordner `/nodered` oder Datei `flow.json`).
-
-Der Node-RED Flow bietet die gleiche Logik, benötigt aber externe Hardware (USB-RS485 Adapter) und eine laufende Node-RED Instanz (z.B. auf dem GX-Gerät via Venus OS Large). Die ESP32-Lösung wird jedoch für den produktiven Dauereinsatz empfohlen, da sie stabiler und unabhängiger läuft.
 
 ---
 
