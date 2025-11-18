@@ -1,6 +1,7 @@
 # ESPHome Topband BMS zu Victron VE.Can Gateway
 
 Dieses Projekt realisiert ein **RS485-zu-CAN-Bus Gateway** auf Basis eines **ESP32 (LILYGO T-CAN485)**. Es ermöglicht die Kommunikation zwischen **Topband BMS** basierten Batteriespeichern und **Victron GX-Geräten** (Cerbo GX, MultiPlus, etc.).
+Es geht vorallem um den EET Batteriespeicher ET0144 1,44 kWh 30 Ah 48V (19" Rack) der ein Topband BMS verbaut hat.
 
 > **💡 Hinweis zu Node-RED:**
 > Dieses Projekt entstand ursprünglich aus einem **Node-RED Flow**. Wenn Sie statt eines ESP32 lieber eine reine Software-Lösung (z.B. auf Venus OS Large) bevorzugen, finden Sie den ursprünglichen Node-RED Flow ebenfalls in diesem Repository (siehe Datei `flow.json` oder Ordner `/nodered`).
