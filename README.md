@@ -14,7 +14,7 @@ Das Projekt wurde speziell für den **EET Batteriespeicher ET0144** (1,44 kWh, 3
 * **Plug & Play:** Integrierter **WiFi-Manager** (Hotspot) zur einfachen WLAN-Einrichtung.
 * **Web-Interface:** Konfiguration der **Anzahl der Akkus** und **Ampere-Limits** bequem im Browser.
 * **Dynamische Logik:** * Automatische Berechnung des Gesamt-SOC (basierend auf Kapazität).
-  * Automatische Skalierung des Stroms (z.B. 2 Akkus à 30A = 60A System-Limit).
+  * Automatische Skalierung des Stroms (z.B. 2 Akkus à 20A = 40A System-Limit).
   * Ausfallsicherheit: Fällt ein Akku aus, wird das Limit sofort reduziert.
 * **Pylontech-Emulation:** Meldet sich als Pylontech-Batterie am Victron System an.
 
