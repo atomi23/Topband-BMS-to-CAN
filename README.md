@@ -1,112 +1,125 @@
-# ESPHome Topband BMS zu Victron VE.Can Gateway
+# Topband / EET BMS zu Victron VE.Can Gateway
 
-Dieses Projekt realisiert ein **RS485-zu-CAN-Bus Gateway** auf Basis eines **ESP32 (LILYGO T-CAN485)**. Es ermöglicht die Kommunikation zwischen **Topband BMS** basierten Batteriespeichern und **Victron GX-Geräten** (Cerbo GX, MultiPlus, etc.).
-Es geht vorallem um den EET Batteriespeicher ET0144 1,44 kWh 30 Ah 48V (19" Rack) der ein Topband BMS verbaut hat.
+Dieses Projekt realisiert ein **RS485-zu-CAN-Bus Gateway** auf Basis eines **ESP32**. Es ermöglicht die Kommunikation zwischen **Topband BMS** basierten Batteriespeichern und **Victron GX-Geräten** (Cerbo GX, MultiPlus, etc.).
+
+Das Projekt wurde speziell für den **EET Batteriespeicher ET0144** (1,44 kWh, 30 Ah, 48V, 19" Rack) entwickelt, funktioniert aber mit den meisten Batterien, die das Topband-Protokoll nutzen.
 
 > **💡 Hinweis zu Node-RED:**
-> Dieses Projekt entstand ursprünglich aus einem **Node-RED Flow**. Wenn Sie statt eines ESP32 lieber eine reine Software-Lösung (z.B. auf Venus OS Large) bevorzugen, finden Sie den ursprünglichen Node-RED Flow ebenfalls in diesem Repository (siehe Datei `flow.json` oder Ordner `/nodered`).
+> Dieses Projekt entstand ursprünglich aus einem **Node-RED Flow**. Wer eine reine Software-Lösung bevorzugt (z.B. auf Venus OS Large), findet den Flow weiterhin im Ordner `/nodered` oder als `flows-topband.json`.
 
-Das Gateway liest die Daten der Batterien über RS485 aus, aggregiert diese (bei Verwendung mehrerer Module) und emuliert das **Pylontech-Protokoll** auf dem VE.Can-Bus. Dadurch erkennt das Victron-System den Speicher als kompatible Batterie inkl. SOC, Spannung, Strom und dynamischen Lade-/Entladelimits.
+## 🚀 Features der Firmware (V2)
 
-## 🚀 Features
-
-* **Plug & Play Hardware:** Entwickelt für das LILYGO T-CAN485 Board.
-* **Multi-BMS Support:** Unterstützt bis zu 16 parallel geschaltete BMS-Module.
-* **Intelligente Aggregation:** Berechnet Gesamtkapazität, Durchschnittsspannung und Sicherheitslimits basierend auf allen angeschlossenen Modulen.
-* **Web-Interface:** Einfache Konfiguration der Anzahl der Module und Basis-Ströme direkt im Browser.
-* **Status-LED:** Visuelles Feedback über den Systemzustand (Verbindung, Fehler, Datentransfer).
-* **Home Assistant Ready:** Alle Daten stehen optional auch direkt in Home Assistant via ESPHome-API zur Verfügung.
-
-## 🛠 Hardware
-
-* **LILYGO® T-CAN485** (ESP32 Board mit integriertem RS485 und CAN Transceiver)
-* Verbindungskabel für RS485 (zum Akku) und CAN (zum Victron GX)
+* **Keine Programmierung nötig:** Einfaches Flashen per Web-Browser.
+* **Multi-Board Support:** Unterstützt **LILYGO T-CAN485** und **Waveshare ESP32-S3-RS485-CAN**.
+* **Plug & Play:** Integrierter **WiFi-Manager** (Hotspot) zur einfachen WLAN-Einrichtung.
+* **Web-Interface:** Konfiguration der **Anzahl der Akkus** und **Ampere-Limits** bequem im Browser.
+* **Dynamische Logik:** * Automatische Berechnung des Gesamt-SOC (basierend auf Kapazität).
+  * Automatische Skalierung des Stroms (z.B. 2 Akkus à 30A = 60A System-Limit).
+  * Ausfallsicherheit: Fällt ein Akku aus, wird das Limit sofort reduziert.
+* **Pylontech-Emulation:** Meldet sich als Pylontech-Batterie am Victron System an.
 
 ---
 
-## ⚡ Installationsanleitung
+## 🛠 Unterstützte Hardware
 
-### Voraussetzungen
-Sie benötigen **ESPHome**.
-* **Option A (Empfohlen):** Als Add-on in Home Assistant.
-* **Option B:** Installation via Kommandozeile auf Ihrem PC.
+Sie benötigen **eines** der folgenden Boards:
 
-### Schritt 1: Dateien vorbereiten
+### Option A: LILYGO® T-CAN485
+* Der Klassiker (ESP32 Standard).
+* **Firmware-Datei:** `VictronGateway_LILYGO_v2.ino.merged.bin`
 
-Laden Sie die beiden Dateien aus diesem Repository herunter und speichern Sie sie in einem neuen Ordner (z. B. `victron-gateway`):
+### Option B: Waveshare ESP32-S3-RS485-CAN
+* Neuere Version (ESP32-S3), industrielles Gehäuse möglich.
+* **Firmware-Datei:** `VictronGateway_v2.ino.merged.bin`
 
-1.  `topband-gateway.yaml` (Die ESPHome Konfiguration)
-2.  `victron_topband_gateway.h` (Der C++ Code für die Logik)
+---
 
-### Schritt 2: OTA-Passwort (Optional)
+## ⚡ Installationsanleitung (Der einfache Weg)
 
-Um Updates sicher über WLAN durchführen zu können, verweist die Konfiguration auf ein `secret`.
-* **Variante A:** Erstellen Sie eine `secrets.yaml` in Ihrem ESPHome-Ordner mit dem Inhalt: `ota_password: "IhrSicheresPasswort"`.
-* **Variante B:** Öffnen Sie die `topband-gateway.yaml` und löschen Sie die Zeile `password: !secret ota_password`, wenn Sie kein Passwort wünschen.
+Sie müssen keine Software installieren. Das Flashen erfolgt direkt über den Browser.
 
-### Schritt 3: Flashen
+### Schritt 1: Firmware herunterladen
+Laden Sie oben aus der Dateiliste die passende `.bin` Datei für Ihr Board herunter:
+* Für **LILYGO**: `VictronGateway_LILYGO_v2.ino.merged.bin`
+* Für **Waveshare**: `VictronGateway_v2.ino.merged.bin`
 
-1.  Verbinden Sie das **LILYGO T-CAN485 Board** per USB mit dem Computer.
-2.  Öffnen Sie das ESPHome Dashboard.
-3.  Erstellen Sie ein "Neues Gerät" (*New Device*).
-4.  Überspringen Sie den Einrichtungs-Assistenten und klicken Sie direkt auf **"Install"**.
-5.  Wählen Sie die Option **"Manually"** (oder "Select File").
-6.  Wählen Sie Ihre heruntergeladene `topband-gateway.yaml` Datei aus.
-7.  ESPHome kompiliert nun den Code und flasht ihn auf das Board.
+*(Achten Sie darauf, die Datei mit "merged" im Namen zu nehmen, diese enthält alles Notwendige).*
 
-### Schritt 4: WLAN einrichten (Captive Portal)
+### Schritt 2: Board flashen
+1.  Verbinden Sie das Board per USB mit Ihrem PC.
+    * *Hinweis Waveshare:* Halten Sie beim Einstecken ggf. die "BOOT"-Taste gedrückt.
+2.  Öffnen Sie das **[Espressif Web Flashing Tool](https://espressif.github.io/esptool-js/)** (Chrome oder Edge Browser).
+3.  Klicken Sie auf **Connect** und wählen Sie den COM-Port Ihres Boards.
+4.  Tragen Sie folgende Werte ein:
+    * **Address:** `0x0`
+    * **File:** Wählen Sie Ihre heruntergeladene `.bin` Datei aus.
+5.  Klicken Sie auf **Program**.
 
-Nach dem ersten Flashen findet das Board noch kein WLAN. Es startet daher einen eigenen Access Point zur Einrichtung.
+### Schritt 3: WLAN Einrichtung (Hotspot)
+Nach dem Flashen startet das Board neu. Da es Ihre WLAN-Daten noch nicht kennt, eröffnet es einen Hotspot.
 
-1.  Suchen Sie auf Ihrem Handy oder Laptop nach dem WLAN **"BMS-Gateway-Setup"**.
-2.  Verbinden Sie sich (Passwort: `setup-bms-123`).
-3.  Es öffnet sich automatisch eine Webseite (Captive Portal). Falls nicht, rufen Sie `192.168.4.1` im Browser auf.
-4.  Wählen Sie Ihr Heim-WLAN aus der Liste und geben Sie Ihr WLAN-Passwort ein.
-5.  Das Board speichert die Daten, startet neu und verbindet sich ab jetzt automatisch mit Ihrem Netzwerk.
+1.  Suchen Sie am Handy/Laptop nach dem WLAN: **`LILYGO-Gateway-Setup`** (bzw. `Victron-Gateway-Setup`).
+2.  Verbinden Sie sich. Ein Anmelde-Fenster sollte sich öffnen (Captive Portal).
+    * *Falls nicht:* Rufen Sie im Browser `192.168.4.1` auf.
+3.  Klicken Sie auf **Configure WiFi**.
+4.  Wählen Sie Ihr Heim-WLAN aus und geben Sie das Passwort ein.
+5.  Das Board speichert und startet neu.
 
-### Schritt 5: Physische Installation & Verkabelung
+### Schritt 4: Gateway Konfiguration
+Suchen Sie im Router die neue IP-Adresse des Gateways und öffnen Sie diese im Browser.
 
-> **⚠️ WICHTIG:** Achten Sie unbedingt auf die korrekte Polarität der Kabel!
+1.  **Anzahl BMS Module:** Stellen Sie ein, wie viele Akkus Sie verbunden haben (1-16).
+    * *Wichtig:* Die Akkus müssen per DIP-Schalter adressiert sein (0, 1, 2...).
+2.  **Strom pro BMS:** Geben Sie den Nennstrom pro Akku an (z.B. `30` für 30A).
+3.  Klicken Sie auf **Speichern**.
 
-**1. RS485 (Verbindung zum Akku)**
-Verbinden Sie die Anschlüsse A/B (bzw. +/-) des Boards mit den entsprechenden Anschlüssen Ihres ersten Topband BMS.
-* *Hinweis:* Stellen Sie die DIP-Schalter an den Akkus binär ein (Akku 0 = alle aus, Akku 1 = Schalter 1 an, usw.).
+---
 
-**2. CAN-Bus (Verbindung zum Victron GX)**
-Verbinden Sie CAN-H und CAN-L des Boards mit dem **BMS-Can** Port Ihres Victron GX-Geräts (z.B. Cerbo GX).
+## 🔌 Verkabelung & Victron Setup
 
-**3. Terminierung (Abschlusswiderstände)**
-Ein CAN-Bus muss an **beiden physikalischen Enden** terminiert sein, sonst kommt es zu Kommunikationsfehlern.
-* **Victron-Seite:** Nutzen Sie den blauen 120-Ohm-Terminator-Stecker (im Lieferumfang des GX enthalten).
-* **ESP32-Seite:** Aktivieren Sie den 120-Ohm-Widerstand auf dem LILYGO-Board. Dies geschieht meist über einen kleinen DIP-Schalter oder Jumper auf der Platine (oft markiert mit "120R" oder "TERM").
+> **⚠️ ACHTUNG:** Achten Sie unbedingt auf die korrekte Polarität (+/- bzw. A/B)!
 
-### Schritt 6: Victron GX konfigurieren
+### 1. RS485 (Verbindung zum Akku)
+Verbinden Sie den RS485-Port des Boards mit dem ersten Akku.
+* **A** an **A** (manchmal auch D+ oder 485+)
+* **B** an **B** (manchmal auch D- oder 485-)
+* *GND ist optional, aber empfohlen.*
 
-Damit der Victron das Gateway erkennt, muss die CAN-Geschwindigkeit angepasst werden.
+### 2. CAN-Bus (Verbindung zum Victron GX)
+Verbinden Sie den CAN-Port des Boards mit dem **BMS-Can** Anschluss des Victron GX (z.B. Cerbo GX).
+* **H** an **CAN-H**
+* **L** an **CAN-L**
 
-1.  Öffnen Sie die **Remote Console** Ihres GX-Geräts.
-2.  Navigieren Sie zu: `Menü` -> `Einstellungen` -> `Dienste`.
+### 3. Terminierung (WICHTIG!)
+Der CAN-Bus muss an beiden Enden terminiert (abgeschlossen) sein:
+1.  **Victron-Seite:** Stecken Sie den blauen V-Terminator-Stecker in den zweiten BMS-Can Port.
+2.  **ESP32-Seite:** Aktivieren Sie den 120Ω Widerstand auf dem Board (meist ein kleiner Schalter oder Jumper "120R" / "TERM" auf der Platine).
+
+### 4. Victron GX Einstellungen
+1.  Öffnen Sie die **Remote Console**.
+2.  Gehen Sie zu: `Menü` -> `Einstellungen` -> `Dienste`.
 3.  Wählen Sie den genutzten CAN-Port (z.B. *VE.Can 1*).
 4.  Stellen Sie das Profil auf: **"CAN-Bus BMS (500 kbit/s)"**.
-5.  Starten Sie das GX-Gerät neu: `Menü` -> `Einstellungen` -> `Allgemein` -> `Neustart`.
-
-### Schritt 7: Gateway konfigurieren
-
-1.  Suchen Sie die IP-Adresse des ESP32 (im Router oder im ESPHome-Log).
-2.  Öffnen Sie die IP-Adresse in einem Webbrowser.
-3.  Sie sehen nun das Web-Interface des Gateways.
-4.  Stellen Sie den Regler **"Anzahl der BMS-Module"** auf Ihre tatsächliche Anzahl ein.
-5.  Passen Sie bei Bedarf die Basis-Ströme (Lade-/Entladelimit) an.
-
-✅ **Fertig!** Die RGB-LED am Board sollte nun **grün** pulsieren, und das Victron-System sollte die Batterie in der Geräteliste anzeigen.
+5.  Starten Sie das GX-Gerät neu.
 
 ---
 
-## 🤝 Unterstützung & Contributing
+## 💻 Für Entwickler (Source Code)
 
-Dies ist ein Open-Source-Projekt und lebt von der Community!
+Wenn Sie den Code anpassen möchten:
+Der Quellcode liegt als `.ino` Datei vor (`VictronGateway.ino` / `_v2.ino`).
+* **IDE:** Arduino IDE oder PlatformIO.
+* **Benötigte Bibliotheken:**
+  * `WiFiManager` (von tzapu)
+  * `Adafruit NeoPixel`
+* **Board-Einstellungen (Arduino IDE):**
+  * Waveshare: `ESP32S3 Dev Module`, USB CDC On Boot: Enabled.
+  * LILYGO: `ESP32 Dev Module`.
 
+---
+
+## 🤝 Unterstützung
+
+Dies ist ein Open-Source-Projekt.
 * **Fehler gefunden?** Erstelle gerne ein "Issue" hier auf GitHub.
-* **Verbesserungsvorschläge?** Pull Requests sind herzlich willkommen!
-
-Lass uns zusammen daran arbeiten, proprietäre Speicher-Systeme offener und kompatibler zu machen!
+* **Erfolg gehabt?** Wir freuen uns über Feedback!
