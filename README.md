@@ -2,7 +2,7 @@
 
 **Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. EET, Power Queen, etc.) über RS485 ausliest und als intelligentes BMS über CAN-Bus an Victron GX-Geräte (Cerbo, MultiPlus) sendet.**
 
-*(Beispielbild des Web-Interfaces \- V59)*
+*([Beispielbild des Web-Interfaces](https://github.com/atomi23/Topband-BMS-to-CAN/releases/download/Beta/screen.jpg) \- V59)*
 
 ## **⚠️ Disclaimer & Warnung**
 
