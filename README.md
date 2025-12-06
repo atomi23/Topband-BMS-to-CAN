@@ -100,7 +100,7 @@ Installieren Sie diese über den Bibliotheksverwalter:
 * **WiFiManager** (by tzapu) \- für das Captive Portal.  
 * **Adafruit NeoPixel** (by Adafruit) \- für die Status-LED.  
 * **ESP32 Board Support Package** (by Espressif) \- Version 2.0.x oder neuer.
-* **PubSubClient (by Nick O'Leary) - Für MQTT
+*   PubSubClient (by Nick O'Leary) - Für MQTT
   
 ### **Board-Einstellungen (Arduino IDE)**
 
