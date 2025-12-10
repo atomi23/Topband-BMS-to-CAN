@@ -8,6 +8,9 @@ Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. EET, Power Queen, A
 
 Hier ein Einblick in die Web-Oberfläche (Power-Graph & Live-Werte):
 
+<img width="1380" height="872" alt="image" src="https://github.com/user-attachments/assets/3336937b-aefc-4ec4-8f42-b38c23b86068" />
+
+
 ![Topband Gateway Dashboard](https://github.com/user-attachments/assets/42b3407d-c421-48cc-9c61-e250e72559f5)
 
 > *Hinweis: Der Screenshot zeigt eine frühere Version. Das aktuelle Design (V117) bietet zusätzlich Dark-Mode, Glas-Effekte, 7 Themes und Drag & Drop.*
