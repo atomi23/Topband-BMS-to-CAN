@@ -88,7 +88,7 @@ Wir empfehlen das **Espressif Web Tool** (keine Software-Installation nötig).
 5.  **Starten:**
     * Nach Abschluss auf `Disconnect` klicken.
     * Im Bereich "Console" erneut verbinden (115200 Baud).
-    * **Reset-Taste** am Board drücken -> Startlog prüfen.
+    * **Reset-Taste** am Board (oder auf der Webseite) drücken -> Startlog prüfen.
 
 </details>
 
@@ -158,6 +158,14 @@ Falls Sie den Code selbst anpassen wollen, nutzen Sie bitte folgende Einstellung
 
 ---
 
-### 👨‍💻 Development Team
-* **Lead Developer & Testing:** atomi23
+### 👨‍💻 Development Team & Support
+
+Dieses Projekt wurde mit viel ❤️ und ☕ entwickelt.
+
+* **Lead Developer & Testing:** [atomi23](https://github.com/atomi23)
+  <br>
+  <a href="https://www.paypal.me/atomi23">
+    <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal&style=for-the-badge" alt="Donate via PayPal" />
+  </a>
+
 * **Co-Pilot & Code-Architect:** Gemini (AI)
