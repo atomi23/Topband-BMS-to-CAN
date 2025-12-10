@@ -4,6 +4,16 @@ Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. EET, Power Queen, A
 
 > **Aktuelle Version:** V117 (Stable)
 
+## 📸 Dashboard Preview
+
+Hier ein Einblick in die Web-Oberfläche (Power-Graph & Live-Werte):
+
+![Topband Gateway Dashboard](https://github.com/user-attachments/assets/42b3407d-c421-48cc-9c61-e250e72559f5)
+
+> *Hinweis: Der Screenshot zeigt eine frühere Version. Das aktuelle Design (V117) bietet zusätzlich Dark-Mode, Glas-Effekte, 7 Themes und Drag & Drop.*
+
+---
+
 ## ⚠️ Disclaimer & Warnung
 
 **PRIVATE USE ONLY. NO COMMERCIAL USE.**
@@ -21,17 +31,19 @@ Da Waveshare verschiedene Hardware-Versionen verkauft, bieten wir ab V117 angepa
 *Die komfortable Lösung mit Dashboard, Diagrammen und MQTT.*
 
 * **`v117_waveshare_4mb_NoPram.bin` (Standard / Safe)**
-    * *Empfohlen!* Läuft auf **ALLEN** Waveshare S3 Boards (4MB/8MB/16MB) stabil.
+    * ✅ **Empfohlen!** Läuft auf **ALLEN** Waveshare S3 Boards (4MB/8MB/16MB) stabil. Sicherste Wahl gegen Bootloops.
 * **`v117_waveshare_16mb_8Pram.bin` (Ultra / High-End)**
-    * *Nur für Experten:* Benötigt zwingend Board mit 16MB Flash & 8MB OPI PSRAM.
+    * *Nur für Experten:* Benötigt zwingend Board mit **16MB Flash & 8MB OPI PSRAM**.
 * **`v117_lilygo_t_can485.bin` (Classic)**
     * Für das LILYGO® T-CAN485 Board.
 
 ### 🥷 STEALTH VERSION (Ohne WLAN / Nur Kabel)
 *Sehr robust, startet in <1 Sekunde, keine Konfiguration nötig.*
 
-* **`v117_stealth_waveshare.bin`** (Universal S3)
-* **`v117_stealth_lilygo.bin`** (Classic)
+* **`STEALTH_V117.waveshare.bin`** (Universal S3)
+    * Läuft auf allen Waveshare S3 Boards.
+* **`STEALTH_V117.lilygo_t_can485.bin`** (Classic)
+    * Für das schwarze T-CAN485 Board.
 
 ---
 
@@ -40,8 +52,8 @@ Da Waveshare verschiedene Hardware-Versionen verkauft, bieten wir ab V117 angepa
 
 ### 🔌 Für Victron (CAN-Bus)
 * **Vollständige Integration:** Meldet sich als kompatible Batterie am Victron System an.
-* **Smart Aggregation:** Fasst bis zu 16 Batterien zu einer großen Bank zusammen.
-* **Monitoring Mode (Full):** Der CAN-Versand kann deaktiviert werden, um das Gateway als reinen Monitor zu nutzen.
+* **Smart Aggregation:** Fasst bis zu 16 Batterien zu einer großen Bank zusammen (Summiert Strom & Kapazität).
+* **Monitoring Mode (Full):** Der CAN-Versand kann deaktiviert werden, um das Gateway als reinen Monitor (ohne Eingriff ins System) zu nutzen.
 
 ### 🎨 Web-Interface (Nur "Full")
 Die "Full" Version bietet eine Design-Engine mit **7 verschiedenen Skins**:
@@ -76,7 +88,7 @@ Wir empfehlen das **Espressif Web Tool** (keine Software-Installation nötig).
 5.  **Starten:**
     * Nach Abschluss auf `Disconnect` klicken.
     * Im Bereich "Console" erneut verbinden (115200 Baud).
-    * Reset-Taste am Board drücken -> Startlog prüfen.
+    * **Reset-Taste** am Board drücken -> Startlog prüfen.
 
 </details>
 
@@ -149,6 +161,3 @@ Falls Sie den Code selbst anpassen wollen, nutzen Sie bitte folgende Einstellung
 ### 👨‍💻 Development Team
 * **Lead Developer & Testing:** atomi23
 * **Co-Pilot & Code-Architect:** Gemini (AI)
-
-![Graph Preview](https://github.com/user-attachments/assets/42b3407d-c421-48cc-9c61-e250e72559f5)
-
