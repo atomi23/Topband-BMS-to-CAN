@@ -8,12 +8,9 @@ Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. EET, Power Queen, A
 
 Hier ein Einblick in die Web-Oberfläche (Power-Graph & Live-Werte):
 
-<img width="1380" height="872" alt="image" src="https://github.com/user-attachments/assets/3336937b-aefc-4ec4-8f42-b38c23b86068" />
+<img width="100%" alt="Topband Gateway Dashboard V117" src="https://github.com/user-attachments/assets/3336937b-aefc-4ec4-8f42-b38c23b86068" />
 
-
-![Topband Gateway Dashboard](https://github.com/user-attachments/assets/42b3407d-c421-48cc-9c61-e250e72559f5)
-
-> *Hinweis: Der Screenshot zeigt eine frühere Version. Das aktuelle Design (V117) bietet zusätzlich Dark-Mode, Glas-Effekte, 7 Themes und Drag & Drop.*
+> *Hinweis: Das aktuelle Design bietet Dark-Mode, Glas-Effekte, 7 Themes und Drag & Drop.*
 
 ---
 
@@ -74,7 +71,62 @@ Die "Full" Version bietet eine Design-Engine mit **7 verschiedenen Skins**:
 </details>
 
 <details>
-<summary><strong>⚡ Installation & Flashen (Anleitung)</strong></summary>
+<summary><strong>🔌 Verkabelung (Pinout & Anleitung) - WICHTIG!</strong></summary>
+
+### Übersichtsschema
+
+```mermaid
+graph LR
+    subgraph BATTERIE ["🔋 EET / Topband Batterie"]
+        direction TB
+        B_Port["Port: RS485 / Link Port<br>(RJ45 Buchse)"]
+    end
+
+    subgraph GATEWAY ["📟 ESP32 Gateway"]
+        direction TB
+        RS485_A["Klemme: A (oder D+)"]
+        RS485_B["Klemme: B (oder D-)"]
+        CAN_H["Klemme: H"]
+        CAN_L["Klemme: L"]
+    end
+
+    subgraph VICTRON ["🔵 Victron Cerbo / GX"]
+        direction TB
+        V_Port["Port: BMS-Can<br>(Nicht VE.Can!)"]
+    end
+
+    %% Verkabelung
+    B_Port -- "Pin 1 (Orange/Weiß)" --> RS485_A
+    B_Port -- "Pin 2 (Orange)" --> RS485_B
+    CAN_H -- "Weiß/Braun" --> V_Port
+    CAN_L -- "Braun" --> V_Port
+### Schritt 1: Kabel zur Batterie (RS485)
+Nimm ein normales LAN-Kabel und schneide einen Stecker ab. Die offenen Adern kommen an das **grüne Schraub-Terminal** am ESP32.
+
+| Batterie Pin (RJ45) | Kabelfarbe (Standard T568B) | ESP32 Klemme |
+| :--- | :--- | :--- |
+| **Pin 1** | 🟠⚪ **Orange / Weiß** | an **A** (oder A+) |
+| **Pin 2** | 🟠 **Orange** | an **B** (oder B-) |
+
+> **Tipp:** Falls die LED am Gateway **ROT** bleibt, tausche einfach A und B am Gateway (Orange und Orange/Weiß vertauschen). Da geht nichts kaputt!
+
+### Schritt 2: Kabel zum Victron (CAN-Bus)
+Verbinde das Gateway mit dem **BMS-Can** Port des Victron (Nicht VE.Can!).
+
+| Victron Pin (RJ45) | Kabelfarbe (Standard T568B) | ESP32 Klemme |
+| :--- | :--- | :--- |
+| **Pin 7** | 🟤⚪ **Braun / Weiß** | an **H** (High) |
+| **Pin 8** | 🟤 **Braun** | an **L** (Low) |
+
+### Schritt 3: Einstellungen (DIP Switches)
+1.  **Am ESP32 Board:** Aktiviere den **120 Ohm Widerstand** (Schalter auf ON oder Jumper setzen).
+2.  **An der Batterie:** Stelle die DIP-Schalter auf **Adresse 1** (Meistens: Schalter 1=ON, Rest=OFF).
+3.  **Am Victron:** Stecke den blauen Terminator-Stecker in den zweiten BMS-Can Port.
+
+</details>
+
+<details>
+<summary><strong>⚡ Installation & Flashen (Web-Tool)</strong></summary>
 
 Wir empfehlen das **Espressif Web Tool** (keine Software-Installation nötig).
 
@@ -96,15 +148,15 @@ Wir empfehlen das **Espressif Web Tool** (keine Software-Installation nötig).
 </details>
 
 <details>
-<summary><strong>🚦 Diagnose & LED Status (WICHTIG)</strong></summary>
+<summary><strong>🚦 Diagnose & LED Status</strong></summary>
 
-Jedes Board (Full & Stealth) verfügt über eine RGB-LED zur Statusanzeige. Dies ist besonders bei Fehlersuche wichtig.
+Jedes Board (Full & Stealth) verfügt über eine RGB-LED zur Statusanzeige.
 
 | Farbe | Verhalten | Bedeutung | Maßnahme |
 | :--- | :--- | :--- | :--- |
 | 🔵 **BLAU** | Dauerleuchten | **Booting** | System startet / WLAN Verbindung läuft. |
 | 🟢 **GRÜN** | Blinkt langsam | **Betrieb OK** | Kommunikation mit Batterie OK, Daten werden gesendet. |
-| 🔴 **ROT** | Dauerleuchten | **Kommunikations-Fehler** | Keine Antwort vom BMS (RS485 Kabel prüfen!) oder CAN-Kabel ab. |
+| 🔴 **ROT** | Dauerleuchten | **Kommunikations-Fehler** | Keine Antwort vom BMS (Kabel A/B tauschen!) oder CAN-Kabel ab. |
 | 🔴 **ROT** | Blinkt schnell | **ALARM (Safety)** | Überspannung (>56.5V)! Ladestrom wird auf 0A gesetzt. |
 | 🟣 **LILA** | Blinkt | **Temperatur-Schutz** | Zu kalt (<0°C) oder zu heiß (>50°C). |
 
@@ -119,21 +171,6 @@ Jedes Board (Full & Stealth) verfügt über eine RGB-LED zur Statusanzeige. Dies
 2.  Verbinden Sie sich (Passwort leer lassen oder `12345678`).
 3.  Geben Sie Ihre WLAN-Daten ein.
 4.  Nach Neustart ist das Dashboard unter `http://victron-gateway.local` (oder der IP-Adresse) erreichbar.
-
-</details>
-
-<details>
-<summary><strong>🔌 Verkabelung (Pinout)</strong></summary>
-
-| Signal | Board | Batterie (Topband) | Victron (BMS-Can) |
-| :--- | :--- | :--- | :--- |
-| **RS485 A** | A / D+ | Pin A (oft 1/2 oder 7/8) | - |
-| **RS485 B** | B / D- | Pin B (oft 1/2 oder 7/8) | - |
-| **CAN H** | H | - | CAN-H |
-| **CAN L** | L | - | CAN-L |
-| **GND** | GND | GND (Schirmung) | GND (Optional) |
-
-* **WICHTIG:** Den **120 Ohm Widerstand** (DIP Schalter oder Jumper) am Board aktivieren!
 
 </details>
 
