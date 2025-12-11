@@ -103,20 +103,23 @@ graph LR
     CAN_H -- "Weiß/Braun" --> V_Port
     CAN_L -- "Braun" --> V_Port
 ```
-Schritt 1: Kabel zur Batterie (RS485)
+### Schritt 1: Kabel zur Batterie (RS485)
 Nimm ein normales LAN-Kabel und schneide einen Stecker ab. Die offenen Adern kommen an das **grüne Schraub-Terminal** am ESP32.
 
-| Batterie Pin (RJ45) | Kabelfarbe (Standard T568B) | ESP32 Klemme |
-| :--- | :--- | :--- |
-| **Pin 1** | 🟠⚪ **Orange / Weiß** | an **A** (oder A+) |
-| **Pin 2** | 🟠 **Orange** | an **B** (oder B-) |
+*Achtung: Prüfe, ob dein Kabel nach T568B (Standard) oder T568A (selten) belegt ist.*
 
-> **Tipp:** Falls die LED am Gateway **ROT** bleibt, tausche einfach A und B am Gateway (Orange und Orange/Weiß vertauschen). Da geht nichts kaputt!
+| Batterie Pin (RJ45) | T568B (Standard) | T568A (Alternativ) | ESP32 Klemme |
+| :--- | :--- | :--- | :--- |
+| **Pin 1** | 🟠⚪ **Orange / Weiß** | 🟢⚪ **Grün / Weiß** | an **A** (oder A+) |
+| **Pin 2** | 🟠 **Orange** | 🟢 **Grün** | an **B** (oder B-) |
+
+> **Tipp:** Falls die LED am Gateway **ROT** bleibt, tausche einfach A und B am Gateway. Da geht nichts kaputt!
 
 ### Schritt 2: Kabel zum Victron (CAN-Bus)
 Verbinde das Gateway mit dem **BMS-Can** Port des Victron (Nicht VE.Can!).
+*Hinweis: Das braune Adernpaar ist bei T568A und T568B identisch.*
 
-| Victron Pin (RJ45) | Kabelfarbe (Standard T568B) | ESP32 Klemme |
+| Victron Pin (RJ45) | Kabelfarbe (Immer gleich) | ESP32 Klemme |
 | :--- | :--- | :--- |
 | **Pin 7** | 🟤⚪ **Braun / Weiß** | an **H** (High) |
 | **Pin 8** | 🟤 **Braun** | an **L** (Low) |
