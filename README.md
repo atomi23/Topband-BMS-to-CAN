@@ -126,7 +126,7 @@ Verbinde das Gateway mit dem **BMS-Can** Port des Victron (Nicht VE.Can!).
 
 ### Schritt 3: Einstellungen (DIP Switches)
 1.  **Am ESP32 Board:** Aktiviere den **120 Ohm Widerstand** (Schalter auf ON oder Jumper setzen).
-2.  **An der Batterie:** Stelle die DIP-Schalter auf **Adresse 1** (Meistens: Schalter 1=ON, Rest=OFF).
+2.  **An der Batterie:** Stelle die DIP-Schalter auf **Adresse 0** (Meistens: Alle Schalter OFF / unten).
 3.  **Am Victron:** Stecke den blauen Terminator-Stecker in den zweiten BMS-Can Port.
 
 </details>
