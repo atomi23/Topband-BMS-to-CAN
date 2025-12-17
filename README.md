@@ -1,8 +1,8 @@
 # 🔋 Topband / EET BMS zu Victron VE.Can Gateway (V117)
 
-Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. EET, Power Queen, AmpereTime, etc.) über RS485 ausliest und als intelligentes BMS über CAN-Bus an Victron GX-Geräte (Cerbo, MultiPlus) sendet. [web:22]
+Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. EET, Power Queen, AmpereTime, etc.) über RS485 ausliest und als intelligentes BMS über CAN-Bus an Victron GX-Geräte (Cerbo, MultiPlus) sendet.
 
-> **Aktuelle Version:** V117b (Stable) [web:22]
+> **Aktuelle Version:** V117b (Stable)
 
 ## 📸 Dashboard Preview
 
@@ -10,40 +10,40 @@ Hier ein Einblick in die Web-Oberfläche (Power-Graph & Live-Werte):
 
 <img width="100%" alt="Topband Gateway Dashboard V117" src="https://github.com/user-attachments/assets/3336937b-aefc-4ec4-8f42-b38c23b86068" />
 
-> *Hinweis: Das aktuelle Design (V117) bietet Dark-Mode, Glas-Effekte, 7 Themes und Drag & Drop.* [web:22]
+> *Hinweis: Das aktuelle Design (V117) bietet Dark-Mode, Glas-Effekte, 7 Themes und Drag & Drop.*
 
 ---
 
 ## ⚠️ Disclaimer & Warnung
 
-**PRIVATE USE ONLY. NO COMMERCIAL USE.** [web:22]
-* **DIY Projekt:** Dies ist ein privates Open-Source-Projekt und steht in keiner geschäftlichen Verbindung zu Topband Battery Co., Ltd. oder Victron Energy. [web:22]
-* **Auf eigene Gefahr:** Die Nutzung erfolgt auf eigenes Risiko. Der Entwickler übernimmt **keine Haftung** für Schäden an Batterien, Wechselrichtern, BMS oder anderer Hardware. [web:22]
-* **Sicherheit:** Stellen Sie sicher, dass DC-Sicherungen verbaut sind. Änderungen an Parametern können Akkus zerstören. [web:22]
+**PRIVATE USE ONLY. NO COMMERCIAL USE.** 
+* **DIY Projekt:** Dies ist ein privates Open-Source-Projekt und steht in keiner geschäftlichen Verbindung zu Topband Battery Co., Ltd. oder Victron Energy.
+* **Auf eigene Gefahr:** Die Nutzung erfolgt auf eigenes Risiko. Der Entwickler übernimmt **keine Haftung** für Schäden an Batterien, Wechselrichtern, BMS oder anderer Hardware. 
+* **Sicherheit:** Stellen Sie sicher, dass DC-Sicherungen verbaut sind. Änderungen an Parametern können Akkus zerstören. 
 
 ---
 
 ## 📦 Downloads (Wähle deine Version!)
 
-Da Waveshare verschiedene Hardware-Versionen verkauft, bieten wir ab V117 angepasste Firmware-Dateien an. [web:22]
+Da Waveshare verschiedene Hardware-Versionen verkauft, bieten wir ab V117 angepasste Firmware-Dateien an. 
 
 ### 🌐 FULL VERSION (Mit Webinterface & WLAN)
-*Die komfortable Lösung mit Dashboard, Diagrammen und MQTT.* [web:22]
+*Die komfortable Lösung mit Dashboard, Diagrammen und MQTT.* 
 
 * **`v117_waveshare_4mb_NoPram.bin` (Standard / Safe)**
-    * ✅ **Empfohlen!** Läuft auf **ALLEN** Waveshare S3 Boards (4MB/8MB/16MB) stabil. Sicherste Wahl gegen Bootloops. [web:22]
+    * ✅ **Empfohlen!** Läuft auf **ALLEN** Waveshare S3 Boards (4MB/8MB/16MB) stabil. Sicherste Wahl gegen Bootloops. 
 * **`v117_waveshare_16mb_8Pram.bin` (Ultra / High-End)**
-    * *Nur für Experten:* Benötigt zwingend Board mit **16MB Flash & 8MB OPI PSRAM**. [web:22]
+    * *Nur für Experten:* Benötigt zwingend Board mit **16MB Flash & 8MB OPI PSRAM**. 
 * **`v117_lilygo_t_can485.bin` (Classic)**
-    * Für das LILYGO® T-CAN485 Board. [web:27]
+    * Für das LILYGO® T-CAN485 Board. 
 
 ### 🥷 STEALTH VERSION (Ohne WLAN / Nur Kabel)
-*Sehr robust, startet in <1 Sekunde, keine Konfiguration nötig.* [web:22]
+*Sehr robust, startet in <1 Sekunde, keine Konfiguration nötig.* 
 
 * **`STEALTH_V117.waveshare.bin`** (Universal S3)
-    * Läuft auf allen Waveshare S3 Boards. [web:22]
+    * Läuft auf allen Waveshare S3 Boards. 
 * **`STEALTH_V117.lilygo_t_can485.bin`** (Classic)
-    * Für das schwarze T-CAN485 Board. [web:27]
+    * Für das schwarze T-CAN485 Board.
 
 ---
 
@@ -51,29 +51,29 @@ Da Waveshare verschiedene Hardware-Versionen verkauft, bieten wir ab V117 angepa
 <summary><strong>🚀 Features & Highlights (Klick zum Ausklappen)</strong></summary>
 
 ### 🔌 Für Victron (CAN-Bus)
-* **Vollständige Integration:** Meldet sich als kompatible Batterie am Victron System an. [web:22]
-* **Smart Aggregation:** Fasst bis zu 16 Batterien zu einer großen Bank zusammen (Summiert Strom & Kapazität). [web:22]
-* **Monitoring Mode (Full):** Der CAN-Versand kann deaktiviert werden, um das Gateway als reinen Monitor (ohne Eingriff ins System) zu nutzen. [web:22]
+* **Vollständige Integration:** Meldet sich als kompatible Batterie am Victron System an. 
+* **Smart Aggregation:** Fasst bis zu 16 Batterien zu einer großen Bank zusammen (Summiert Strom & Kapazität). 
+* **Monitoring Mode (Full):** Der CAN-Versand kann deaktiviert werden, um das Gateway als reinen Monitor (ohne Eingriff ins System) zu nutzen. 
 
 ### 🎨 Web-Interface (Nur "Full")
-Die "Full" Version bietet eine Design-Engine mit **7 verschiedenen Skins**: [web:22]
-* 💎 **Modern Glass:** Transparenter Look mit Status-Glow. [web:22]
-* 🔋 **Battery Live:** Hintergrundfarbe ändert sich dynamisch mit dem SOC. [web:22]
-* 👾 **Cyberpunk HUD:** Neon-Look für Technik-Fans. [web:22]
-* 🏗️ **Custom Dashboard:** Karten können per **Drag & Drop** verschoben werden. [web:22]
-* **Plus:** Retro Dark, Simple, Soft UI. [web:22]
+Die "Full" Version bietet eine Design-Engine mit **7 verschiedenen Skins**: 
+* 💎 **Modern Glass:** Transparenter Look mit Status-Glow. 
+* 🔋 **Battery Live:** Hintergrundfarbe ändert sich dynamisch mit dem SOC. 
+* 👾 **Cyberpunk HUD:** Neon-Look für Technik-Fans. 
+* 🏗️ **Custom Dashboard:** Karten können per **Drag & Drop** verschoben werden.
+* **Plus:** Retro Dark, Simple, Soft UI. 
 
 ### 🛡️ Sicherheit & Stabilität
-* **Hard-Coded Safety:** Ladestrom-Cutoff (0A) bei V > 56.5V oder Temp < 0°C / > 50°C. [web:22]
-* **Watchdog Protection:** Verhindert Abstürze, wenn Batterien nicht antworten. [web:22]
-* **Flash-Schutz:** Diagrammdaten liegen im RAM, Energiewerte werden nur 1x täglich gespeichert. [web:22]
+* **Hard-Coded Safety:** Ladestrom-Cutoff (0A) bei V > 56.5V oder Temp < 0°C / > 50°C. 
+* **Watchdog Protection:** Verhindert Abstürze, wenn Batterien nicht antworten. 
+* **Flash-Schutz:** Diagrammdaten liegen im RAM, Energiewerte werden nur 1x täglich gespeichert. 
 
 </details>
 
 <details>
 <summary><strong>🔌 Verkabelung (Pinout & Anleitung) - WICHTIG!</strong></summary>
 
-Wenn Sie unsicher sind, orientieren Sie sich an den Farben eines normalen Netzwerkkabels (TIA-568B), wenn Sie den Stecker abschneiden. [web:22]
+Wenn Sie unsicher sind, orientieren Sie sich an den Farben eines normalen Netzwerkkabels (TIA-568B), wenn Sie den Stecker abschneiden. 
 
 ### Übersichtsschema
 
