@@ -1,217 +1,253 @@
-# 🔋 Topband / EET BMS zu Victron VE.Can Gateway (V117)
+# 🔋 Topband / Victron Gateway V125 "Universal Master"
 
-Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. EET, Power Queen, AmpereTime, etc.) über RS485 ausliest und als intelligentes BMS über CAN-Bus an Victron GX-Geräte (Cerbo, MultiPlus) sendet.
+> **Aktuelle Version / Current Version:** V125 (Stable)  
+> **Supported Hardware:** LilyGo T-CAN485, Waveshare ESP32-S3 (Mini & Power/Pro)
 
-> **Aktuelle Version:** V117b (Stable)
+**Ein Code für alle Boards. Maximale Sicherheit. Volle Kontrolle.** *One Code to rule them all. Max Safety. Full Control.*
+
+Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. **EET, Power Queen, AmpereTime, Redodo**, etc.) über RS485 ausliest, intelligent managt und als natives BMS über CAN-Bus an **Victron GX** (Cerbo, MultiPlus), **Deye** oder **SMA** sendet.
 
 ## 📸 Dashboard Preview
 
-Hier ein Einblick in die Web-Oberfläche (Power-Graph & Live-Werte):
+Das neue V125 Webinterface (Responsive Design für Mobile & Desktop):
 
-<img width="100%" alt="Topband Gateway Dashboard V117" src="https://github.com/user-attachments/assets/3336937b-aefc-4ec4-8f42-b38c23b86068" />
-
-> *Hinweis: Das aktuelle Design (V117) bietet Dark-Mode, Glas-Effekte, 7 Themes und Drag & Drop.*
+<img width="100%" alt="Topband Gateway Dashboard V125" src="https://github.com/user-attachments/assets/3336937b-aefc-4ec4-8f42-b38c23b86068" />
 
 ---
 
 ## ⚠️ Disclaimer & Warnung
 
-**PRIVATE USE ONLY. NO COMMERCIAL USE.** 
-* **DIY Projekt:** Dies ist ein privates Open-Source-Projekt und steht in keiner geschäftlichen Verbindung zu Topband Battery Co., Ltd. oder Victron Energy.
-* **Auf eigene Gefahr:** Die Nutzung erfolgt auf eigenes Risiko. Der Entwickler übernimmt **keine Haftung** für Schäden an Batterien, Wechselrichtern, BMS oder anderer Hardware. 
-* **Sicherheit:** Stellen Sie sicher, dass DC-Sicherungen verbaut sind. Änderungen an Parametern können Akkus zerstören. 
+**PRIVATE USE ONLY. NO COMMERCIAL USE.**
+- **DIY Projekt:** Dies ist ein privates Open-Source-Projekt. Keine geschäftliche Verbindung zu Herstellern.
+- **Auf eigene Gefahr:** Nutzung auf eigenes Risiko. Keine Haftung für Schäden an Batterien oder Hardware.
+- **Sicherheit:** DC-Sicherungen sind Pflicht! Falsche Parameter können Akkus zerstören.
 
 ---
 
-## 📦 Downloads (Wähle deine Version!)
+## 🇩🇪 DEUTSCH / GERMAN
 
-Da Waveshare verschiedene Hardware-Versionen verkauft, bieten wir ab V117 angepasste Firmware-Dateien an. 
-
-### 🌐 FULL VERSION (Mit Webinterface & WLAN)
-*Die komfortable Lösung mit Dashboard, Diagrammen und MQTT.* 
-
-* **`v117_waveshare_4mb_NoPram.bin` (Standard / Safe)**
-    * ✅ **Empfohlen!** Läuft auf **ALLEN** Waveshare S3 Boards (4MB/8MB/16MB) stabil. Sicherste Wahl gegen Bootloops. 
-* **`v117_waveshare_16mb_8Pram.bin` (Ultra / High-End)**
-    * *Nur für Experten:* Benötigt zwingend Board mit **16MB Flash & 8MB OPI PSRAM**. 
-* **`v117_lilygo_t_can485.bin` (Classic)**
-    * Für das LILYGO® T-CAN485 Board. 
-
-### 🥷 STEALTH VERSION (Ohne WLAN / Nur Kabel)
-*Sehr robust, startet in <1 Sekunde, keine Konfiguration nötig.* 
-
-* **`STEALTH_V117.waveshare.bin`** (Universal S3)
-    * Läuft auf allen Waveshare S3 Boards. 
-* **`STEALTH_V117.lilygo_t_can485.bin`** (Classic)
-    * Für das schwarze T-CAN485 Board.
-
----
+### 🌟 Was ist neu in V125?
 
 <details>
-<summary><strong>🚀 Features & Highlights (Klick zum Ausklappen)</strong></summary>
+<summary>🔽 <b>Klicken zum Ausklappen: Alle neuen Features & Highlights</b></summary>
 
-### 🔌 Für Victron (CAN-Bus)
-* **Vollständige Integration:** Meldet sich als kompatible Batterie am Victron System an. 
-* **Smart Aggregation:** Fasst bis zu 16 Batterien zu einer großen Bank zusammen (Summiert Strom & Kapazität). 
-* **Monitoring Mode (Full):** Der CAN-Versand kann deaktiviert werden, um das Gateway als reinen Monitor (ohne Eingriff ins System) zu nutzen. 
+#### 1. 🧬 Universal-Architektur
+Es gibt keine getrennten Dateien mehr. Du wählst Hardware und Modus einfach oben im Code:
+- **Hardware:** `LilyGo T-CAN485` (Klassik) oder `Waveshare ESP32-S3` (Mini/Power).
+- **Modus:**
+  - `SMART_WIFI`: Volles Programm mit Webinterface, MQTT, Home Assistant & Logging.
+  - `SIMPLE_CABLE`: "Stealth"-Modus ohne WLAN. Startzeit < 1 Sekunde, Plug & Play Übersetzung.
 
-### 🎨 Web-Interface (Nur "Full")
-Die "Full" Version bietet eine Design-Engine mit **7 verschiedenen Skins**: 
-* 💎 **Modern Glass:** Transparenter Look mit Status-Glow. 
-* 🔋 **Battery Live:** Hintergrundfarbe ändert sich dynamisch mit dem SOC. 
-* 👾 **Cyberpunk HUD:** Neon-Look für Technik-Fans. 
-* 🏗️ **Custom Dashboard:** Karten können per **Drag & Drop** verschoben werden.
-* **Plus:** Retro Dark, Simple, Soft UI. 
+#### 2. 🛡️ Sicherheits-Kern "Thermostat"
+Schützt LiFePO4-Zellen aktiv vor Frost-Ladung und Überhitzung.
+- **Getrennte Limits:** Separate Temperaturen für **Laden** (z.B. >5°C) und **Entladen** (z.B. >-10°C) einstellbar.
+- **Profi-Logik:** Wählbar im Menü:
+  - **MAX SAFETY (Standard):** Sobald **ein einziger** Sensor die Grenze reißt (z.B. < 5°C), wird das Laden gestoppt.
+  - **AVERAGE:** Der Durchschnittswert aller Sensoren wird genutzt (toleranter).
 
-### 🛡️ Sicherheit & Stabilität
-* **Hard-Coded Safety:** Ladestrom-Cutoff (0A) bei V > 56.5V oder Temp < 0°C / > 50°C. 
-* **Watchdog Protection:** Verhindert Abstürze, wenn Batterien nicht antworten. 
-* **Flash-Schutz:** Diagrammdaten liegen im RAM, Energiewerte werden nur 1x täglich gespeichert. 
+#### 3. 🏠 Smart Home Ready
+- **Home Assistant:** 100% Auto-Discovery. Keine YAML-Config mehr nötig.
+- **Multi-Protokoll:** Victron (Standard), Pylontech (Deye/Goodwe/Growatt), SMA Sunny Island.
+
+#### 4. 🚦 Status LED 3.0 (Smart Colors)
+- 🟣 **Lila:** Verbinde mit WLAN...
+- 🔵 **Blau (Pulsierend):** Suche BMS / Scanner-Modus.
+- 🟢 **Grün (Atmen):** Alles OK. System läuft.
+- 🟡 **Gelb:** Warnung (Zell-Drift oder Limits erreicht).
+- 🔴 **Rot (Blitz):** ALARM (Not-Aus / Schutzabschaltung).
+
+#### 5. 🕵️‍♂️ Sherlock & File Manager
+- **Spy Mode:** Zeichnet unbekannte Rohdaten auf SD-Karte auf.
+- **Web-Manager:** Logs & Dateien direkt im Browser herunterladen/löschen.
 
 </details>
 
+### 🛠️ Installation & Anleitung
+
+Da die V125 universell ist, wird sie vor dem Flashen kurz konfiguriert.
+
 <details>
-<summary><strong>🔌 Verkabelung (Pinout & Anleitung) - WICHTIG!</strong></summary>
+<summary>🔽 <b>Klicken zum Ausklappen: Schritt-für-Schritt Anleitung</b></summary>
 
-Wenn Sie unsicher sind, orientieren Sie sich an den Farben eines normalen Netzwerkkabels (TIA-568B), wenn Sie den Stecker abschneiden. 
+#### 1. Code Konfiguration (WICHTIG!)
+Öffne die Datei `sketch.ino` in der Arduino IDE. Ganz oben findest du den Konfigurations-Bereich. Entferne die `//` vor deiner Hardware und deinem Wunsch-Modus:
 
-### Übersichtsschema
+```cpp
+// 1. HARDWARE (Wähle GENAU EINS)
+#define BOARD_LILYGO        // <-- Aktivieren für T-CAN485
+// #define BOARD_WAVESHARE  // <-- Aktivieren für Waveshare S3 (Mini & Power)
+
+// 2. MODUS (Wähle GENAU EINS)
+#define MODE_SMART_WIFI     // <-- Standard (Mit Webinterface & HA)
+// #define MODE_SIMPLE_CABLE // <-- Stealth (Kein WLAN, nur Kabel-Übersetzer)
+```
+
+#### 2. Arduino IDE Einstellungen
+Wähle unter Werkzeuge -> Board die passenden Settings:
+
+| Einstellung      | LilyGo T-CAN485       | Waveshare S3 (Mini & Power) |
+|---|---|---|
+| Board            | ESP32 Dev Module      | ESP32S3 Dev Module          |
+| USB CDC On Boot  | - (egal)              | Enable (Wichtig!)           |
+| Flash Mode       | QIO                   | QIO 80MHz                   |
+| Partition Scheme | Huge APP (3MB No OTA) | 8MB with Spiffs (oder 16MB) |
+
+Tipp für Waveshare S3: Falls der Upload nicht startet: Halte die Taste BOOT, drücke kurz RESET, lasse BOOT los.
+
+#### 3. Erster Start (Smart Mode)
+- Verbinde dich mit dem WLAN `Victron-Gateway-Setup`.
+- Öffne `http://192.168.4.1` im Browser.
+- Konfiguriere dein Haus-WLAN.
+- Wichtig: Gehe danach in Settings -> Profi Mode und prüfe die Zellanzahl (15S oder 16S)!
+
+</details>
+
+### 🔌 Verkabelung (Pinout)
+
+<details>
+<summary>🔽 <b>Klicken zum Ausklappen: Anschlussplan & Diagramm</b></summary>
+
+#### Übersichtsschema
 
 ```mermaid
 graph LR
-    subgraph BATTERIE ["🔋 EET / Topband Batterie"]
-        direction TB
-        B_Port["Port: RS485 / Link Port<br>(RJ45 Buchse)"]
+    subgraph BATTERIE ["🔋 EET / Topband"]
+        B_Port["RS485 Port"]
     end
 
     subgraph GATEWAY ["📟 ESP32 Gateway"]
-        direction TB
-        RS485_A["Klemme: A (oder D+)"]
-        RS485_B["Klemme: B (oder D-)"]
-        CAN_H["Klemme: H"]
-        CAN_L["Klemme: L"]
+        RS485_A["Klemme A (A+)"]
+        RS485_B["Klemme B (B-)"]
+        CAN_H["CAN H"]
+        CAN_L["CAN L"]
     end
 
-    subgraph VICTRON ["🔵 Victron Cerbo / GX"]
-        direction TB
-        V_Port["Port: BMS-Can<br>(Nicht VE.Can!)"]
+    subgraph INVERTER ["🔵 Victron / Deye"]
+        V_Port["BMS-Can Port"]
     end
 
     %% Verkabelung
     B_Port -- "Pin 1 (Orange/Weiß)" --> RS485_A
     B_Port -- "Pin 2 (Orange)" --> RS485_B
-    CAN_H -- "Weiß/Braun" --> V_Port
-    CAN_L -- "Braun" --> V_Port
+    CAN_H -- "Pin 7 (Braun/Weiß)" --> V_Port
+    CAN_L -- "Pin 8 (Braun)" --> V_Port
 ```
-### Schritt 1: Kabel zur Batterie (RS485)
-Nimm ein normales LAN-Kabel und schneide einen Stecker ab. Die offenen Adern kommen an das **grüne Schraub-Terminal** am ESP32.
 
-*Achtung: Prüfe, ob dein Kabel nach T568B (Standard) oder T568A (selten) belegt ist.*
+#### 1. Batterie zu Gateway (RS485)
+- Nimm ein LAN-Kabel, schneide einen Stecker ab. Nutze das ORANGE Paar:
+- Pin 1 (Orange/Weiß) an ESP32 RS485 A (A+)
+- Pin 2 (Orange) an ESP32 RS485 B (B-)
+- Die LED bleibt Blau pulsierend? Tausche A und B!
 
-| Batterie Pin (RJ45) | T568B (Standard) | T568A (Alternativ) | ESP32 Klemme |
-| :--- | :--- | :--- | :--- |
-| **Pin 1** | 🟠⚪ **Orange / Weiß** | 🟢⚪ **Grün / Weiß** | an **A** (oder A+) |
-| **Pin 2** | 🟠 **Orange** | 🟢 **Grün** | an **B** (oder B-) |
+#### 2. Gateway zu Wechselrichter (CAN)
+- Verbinde den CAN-Port des ESP32 mit dem BMS-Can des Wechselrichters.
+- ESP32 CAN H an Victron/Deye Pin 7 (Braun/Weiß)
+- ESP32 CAN L an Victron/Deye Pin 8 (Braun)
+- GND (optional): Pin 3
+- Hinweis: Vergiss nicht den Terminator-Widerstand am zweiten CAN-Port des Victron/Deye und aktiviere den DIP-Schalter (120R) am Gateway!
 
-> **Tipp:** Falls die LED am Gateway **ROT** bleibt, tausche einfach A und B am Gateway. Da geht nichts kaputt!
+</details>
+---
 
-### Schritt 2: Kabel zum Victron (CAN-Bus)
-Verbinde das Gateway mit dem **BMS-Can** Port des Victron (Nicht VE.Can!).
-*Hinweis: Das braune Adernpaar ist bei T568A und T568B identisch.*
+## 🇺🇸 ENGLISH / INTERNATIONAL
 
-| Victron Pin (RJ45) | Kabelfarbe (Immer gleich) | ESP32 Klemme |
-| :--- | :--- | :--- |
-| **Pin 7** | 🟤⚪ **Braun / Weiß** | an **H** (High) |
-| **Pin 8** | 🟤 **Braun** | an **L** (Low) |
+### 🌟 What's New in V125?
 
-### Schritt 3: Einstellungen (DIP Switches)
-1.  **Am ESP32 Board:** Aktiviere den **120 Ohm Widerstand** (Schalter auf ON oder Jumper setzen).
-2.  **An der Batterie:** Stelle die DIP-Schalter auf **Adresse 0** (Meistens: Alle Schalter OFF / unten).
-3.  **Am Victron:** Stecke den blauen Terminator-Stecker in den zweiten BMS-Can Port.
+<details>
+<summary>🔽 <b>Click to expand: All new Features & Highlights</b></summary>
+
+#### 1. 🧬 Universal Architecture
+No more separate files. One firmware for all hardware, configurable via `#define`:
+- LilyGo T-CAN485 (Classic)
+- Waveshare ESP32-S3 (Supports Mini & Power/Pro versions)
+
+Modes:
+- `SMART_WIFI`: Full features including WebUI, MQTT, HA & Logging.
+- `SIMPLE_CABLE`: "Stealth" mode without WiFi. Boot time < 1 sec, plug & play translation.
+
+#### 2. 🛡️ "Thermostat" Safety Core
+Protects LiFePO4 cells from frozen charging and overheating.
+- Split limits: Separate temperature ranges for Charging (e.g., > 5°C) and Discharging (e.g., > -10°C).
+- Selectable logic: Choose in "Expert Mode" between "Max Safety" (Worst sensor rules) or "Average" (Average of all sensors).
+
+#### 3. 🏠 Smart Home Ready
+- Home Assistant: 100% Auto-Discovery. No YAML configuration needed.
+- Multi-Protocol: Supports Victron (Default), Pylontech (Deye/Goodwe), and SMA Sunny Island.
+
+#### 4. 🚦 Status LED 3.0 (Smart Colors)
+- 🟣 Purple: Connecting to WiFi...
+- 🔵 Blue (Pulsing): Searching BMS / Scanner Mode.
+- 🟢 Green (Breathing): System Healthy / Running.
+- 🟡 Yellow: Warning (Cell Drift or Limits reached).
+- 🔴 Red (Strobe): CRITICAL ALARM (Cutoff / Overheat).
 
 </details>
 
+### 🛠️ Installation & Guide
+
 <details>
-<summary><strong>⚡ Installation & Flashen (Web-Tool)</strong></summary>
+<summary>🔽 <b>Click to expand: Flashing Instructions & Settings</b></summary>
 
-Wir empfehlen das **Espressif Web Tool** (keine Software-Installation nötig).
+#### 1. Code Configuration (IMPORTANT!)
+Open `sketch.ino` in Arduino IDE. At the very top, you must uncomment the lines matching your hardware and mode:
 
-🔗 **[espressif.github.io/esptool-js/](https://espressif.github.io/esptool-js/)**
+```cpp
+// 1. HARDWARE (Select ONE)
+#define BOARD_LILYGO        // <-- For T-CAN485
+// #define BOARD_WAVESHARE  // <-- For Waveshare S3 (Mini & Power)
 
-1.  **Browser:** Bitte **Google Chrome** oder **Edge** nutzen.
-2.  **Verbinden:** Board per USB anschließen, oben auf `Connect` klicken und Port wählen.
-    * *Tipp Waveshare:* Ggf. die "BOOT"-Taste beim Einstecken gedrückt halten.
-3.  **Vorbereitung (WICHTIG):**
-    * Klicken Sie einmal auf **Erase Flash**, um alte Einstellungen zu löschen. Dies verhindert Bootloops!
-4.  **Flashen:**
-    * Wählen Sie unten die passende `.bin` Datei aus (Adresse `0x0`).
-    * Klicken Sie auf **Program**.
-5.  **Starten:**
-    * Nach Abschluss auf `Disconnect` klicken.
-    * Im Bereich "Console" erneut verbinden (115200 Baud).
-    * **Reset-Taste** am Board (oder auf der Webseite) drücken -> Startlog prüfen.
+// 2. MODE (Select ONE)
+#define MODE_SMART_WIFI     // <-- Standard (WiFi/Web)
+// #define MODE_SIMPLE_CABLE // <-- Stealth (No WiFi)
+```
+
+#### 2. Arduino IDE Settings
+
+| Setting          | LilyGo T-CAN485       | Waveshare S3 (Mini & Power) |
+|---|---|---|
+| Board            | ESP32 Dev Module      | ESP32S3 Dev Module          |
+| USB CDC On Boot  | -                     | Enable (Crucial!)           |
+| Flash Mode       | QIO                   | QIO 80MHz                   |
+| Partition Scheme | Huge APP (3MB No OTA) | 8MB with Spiffs (or 16MB)   |
+
+Tip for Waveshare S3: If upload fails: Hold BOOT button, press RESET, release BOOT.
+
+#### 3. First Start (Smart Mode)
+- Connect to WiFi hotspot `Victron-Gateway-Setup`.
+- Open `http://192.168.4.1`.
+- Configure your home WiFi.
+- Important: Go to Settings -> Expert Mode and verify Cell Count (15S/16S)!
 
 </details>
 
-<details>
-<summary><strong>🚦 Diagnose & LED Status</strong></summary>
-
-Jedes Board (Full & Stealth) verfügt über eine RGB-LED zur Statusanzeige.
-
-| Farbe | Verhalten | Bedeutung | Maßnahme |
-| :--- | :--- | :--- | :--- |
-| 🔵 **BLAU** | Dauerleuchten | **Booting** | System startet / WLAN Verbindung läuft. |
-| 🟢 **GRÜN** | Blinkt langsam | **Betrieb OK** | Kommunikation mit Batterie OK, Daten werden gesendet. |
-| 🔴 **ROT** | Dauerleuchten | **Kommunikations-Fehler** | Keine Antwort vom BMS (Kabel A/B tauschen!) oder CAN-Kabel ab. |
-| 🔴 **ROT** | Blinkt schnell | **ALARM (Safety)** | Überspannung (>56.5V)! Ladestrom wird auf 0A gesetzt. |
-| 🟣 **LILA** | Blinkt | **Temperatur-Schutz** | Zu kalt (<0°C) oder zu heiß (>50°C). |
-
-</details>
+### 🔌 Wiring (Pinout)
 
 <details>
-<summary><strong>📖 Bedienung (Webinterface)</strong></summary>
+<summary>🔽 <b>Click to expand: Wiring Diagram</b></summary>
 
-*(Gilt nur für die Full Version)*
+#### 1. Battery to Gateway (RS485)
+- Use a standard LAN cable, cut one connector. Use the ORANGE pair:
+- Pin 1 (Orange/White) to ESP32 RS485 A (A+)
+- Pin 2 (Orange) to ESP32 RS485 B (B-)
+- LED stays Blue? Swap A and B!
 
-1.  Suchen Sie nach dem WLAN **"Victron-Gateway-Setup"**.
-2.  Verbinden Sie sich (Passwort leer lassen oder `12345678`).
-3.  Geben Sie Ihre WLAN-Daten ein.
-4.  Nach Neustart ist das Dashboard unter `http://victron-gateway.local` (oder der IP-Adresse) erreichbar.
-
-</details>
-
-<details>
-<summary><strong>❓ FAQ & Troubleshooting</strong></summary>
-
-**Mein Waveshare Board startet ständig neu (Bootloop)?**
-Sie haben vermutlich eine Version geflasht, die für den Speicherchip zu groß ist.
-* Nutzen Sie die **"Standard / Safe" (4MB)** Version.
-* Führen Sie vor dem Flashen unbedingt ein **"Erase Flash"** durch.
-
-**Ich habe keinen Victron, kann ich das Gateway trotzdem nutzen?**
-Ja! (Nur Full Version). Gehen Sie in die Einstellungen und deaktivieren Sie den Haken bei **"Enable Victron CAN"**. Die Fehlermeldung im Dashboard verschwindet dann.
-
-**Werte im Diagramm sind nach Neustart weg?**
-Das ist Absicht. Um den Speicherchip zu schonen, liegen die hochauflösenden 48h-Kurven nur im RAM. Die kWh-Zähler (Balkendiagramm) werden jedoch dauerhaft gespeichert.
-
-**Selbst Kompilieren (Arduino IDE)?**
-Falls Sie den Code selbst anpassen wollen, nutzen Sie bitte folgende Einstellungen für Waveshare S3:
-* **Board:** `ESP32S3 Dev Module`
-* **Partition Scheme:** `Huge APP (3MB No OTA/1MB SPIFFS)`
-* **PSRAM:** `OPI PSRAM` (nur bei 16MB Board) oder `Disabled`.
+#### 2. Gateway to Inverter (CAN)
+- Connect the ESP32 CAN port to the inverter's BMS-Can port.
+- ESP32 CAN H to Victron/Deye Pin 7 (Brown/White)
+- ESP32 CAN L to Victron/Deye Pin 8 (Brown)
+- GND (optional): Pin 3
+- Note: Don't forget the Terminator Resistor on the second CAN port of the Victron/Deye and enable the DIP switch (120R) on the Gateway!
 
 </details>
 
 ---
 
-### 👨‍💻 Development Team & Support
+## 👨‍💻 Support & Donation
 
-Dieses Projekt wurde mit viel ❤️ und ☕ entwickelt.
+Dieses Projekt wurde mit viel ❤️, ☕ und KI-Unterstützung entwickelt.  
+This project was developed with lots of ❤️, ☕ and AI assistance.
 
-* **Lead Developer & Testing:** [atomi23](https://github.com/atomi23)
-  <br>
-  <a href="https://www.paypal.me/atomi23">
-    <img src="https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal&style=for-the-badge" alt="Donate via PayPal" />
-  </a>
+Lead Developer: [atomi23](https://github.com/atomi23)  
+Code Architect: Gemini (AI)
 
-* **Co-Pilot & Code-Architect:** Gemini (AI)
+<a href="https://www.paypal.me/atomi23"><img src="https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal&style=for-the-badge" alt="Donate via PayPal" /></a>
