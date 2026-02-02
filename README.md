@@ -11,7 +11,7 @@ Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. **EET, Power Queen,
 
 Das neue V125 Webinterface (Responsive Design für Mobile & Desktop):
 
-<img width="1384" height="879" alt="image" src="https://github.com/user-attachments/assets/fb088ed6-1755-4a37-8191-d2f7d7c64224" />
+<img width="1435" height="948" alt="image" src="https://github.com/user-attachments/assets/7c1fbbec-3785-4dd2-b581-ba8a500fa5f7" />
 <img width="504" height="294" alt="image" src="https://github.com/user-attachments/assets/6f92dd61-892b-4715-8db4-48bfe97a1a52" />
 <img width="515" height="309" alt="image" src="https://github.com/user-attachments/assets/cf79f679-a5b6-4d94-91ae-0bbb594c42a0" />
 
