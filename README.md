@@ -1,6 +1,6 @@
 # 🔋 Topband / Victron Gateway V125 "Universal Master"
 
-> **Aktuelle Version / Current Version:** V125 (Stable) bzw rechts bei Realses schauen da öfter mal updates 
+> **Aktuelle Version / Current Version:** V125 (Stable) bzw rechts bei Releases schauen da öfter mal updates 
 > **Supported Hardware:** LilyGo T-CAN485, Waveshare ESP32-S3 (Mini & Power/Pro)
 
 **Ein Code für alle Boards. Maximale Sicherheit. Volle Kontrolle.** *One Code to rule them all. Max Safety. Full Control.*
