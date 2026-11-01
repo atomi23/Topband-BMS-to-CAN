@@ -1,11 +1,16 @@
-# 🔋 Topband / Victron Gateway V125 "Universal Master"
+# 🔋 Topband / Victron Gateway V2.03 "Universal Master"
 
-> **Aktuelle Version / Current Version:** V125 (Stable) bzw rechts bei Releases schauen da öfter mal updates 
-> **Supported Hardware:** LilyGo T-CAN485, Waveshare ESP32-S3 (Mini & Power/Pro)
+> **Aktuelle Version / Current Version:** **V2.03** (bzw. rechts bei Releases schauen)  
+> **Supported Hardware:** LilyGo T-CAN485, Waveshare ESP32-S3 (Mini & Power/Pro), **M5Stack Basic/Core + Module COMMU**
 
 **Ein Code für alle Boards. Maximale Sicherheit. Volle Kontrolle.** *One Code to rule them all. Max Safety. Full Control.*
 
 Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. **EET, Power Queen, AmpereTime, Redodo**, etc.) über RS485 ausliest, intelligent managt und als natives BMS über CAN-Bus an **Victron GX** (Cerbo, MultiPlus), **Deye** oder **SMA** sendet.
+
+### Neu in V2.03
+- **LilyGo T-CAN485 Fix:** CAN TX/RX an offizielle Pins (GPIO26/27), `CAN_SE` GPIO23, robusteres RS485-Polling (Timeout/Frame-Ende, UART2).
+- **M5Stack Basic/Core + COMMU:** RS485 + MCP2515-CAN, lokale UI auf dem 320×240 Display (Buttons A/B/C).
+- Source: `TopbandV2_03_source.ino` bzw. fertige Profile `TopbandV2_03_profile_*`.
 
 ## 📸 Dashboard Preview
 
@@ -78,25 +83,32 @@ Da die V125 universell ist, wird sie vor dem Flashen kurz konfiguriert.
 
 ```cpp
 // 1. HARDWARE (Wähle GENAU EINS)
-#define BOARD_LILYGO        // <-- Aktivieren für T-CAN485
-// #define BOARD_WAVESHARE  // <-- Aktivieren für Waveshare S3 (Mini & Power)
+#define BOARD_LILYGO        // T-CAN485
+// #define BOARD_WAVESHARE  // Waveshare S3 (Mini & Power)
+// #define BOARD_M5STACK    // M5Stack Basic/Core + Module COMMU
 
 // 2. MODUS (Wähle GENAU EINS)
-#define MODE_SMART_WIFI     // <-- Standard (Mit Webinterface & HA)
-// #define MODE_SIMPLE_CABLE // <-- Stealth (Kein WLAN, nur Kabel-Übersetzer)
+#define MODE_SMART_WIFI     // Standard (Webinterface & HA)
+// #define MODE_SIMPLE_CABLE // Stealth (kein WLAN)
 ```
+
+Fertige Profile (Board schon gesetzt):
+- `TopbandV2_03_profile_LilyGo_TCAN485_WLAN.ino`
+- `TopbandV2_03_profile_WaveshareS3_Minimal_WLAN.ino`
+- `TopbandV2_03_profile_M5Stack_COMMU_WLAN.ino` (Libs: **M5Unified**, **mcp_can**)
 
 #### 2. Arduino IDE Einstellungen
 Wähle unter Werkzeuge -> Board die passenden Settings:
 
-| Einstellung      | LilyGo T-CAN485       | Waveshare S3 (Mini & Power) |
-|---|---|---|
-| Board            | ESP32 Dev Module      | ESP32S3 Dev Module          |
-| USB CDC On Boot  | - (egal)              | Enable (Wichtig!)           |
-| Flash Mode       | QIO                   | QIO 80MHz                   |
-| Partition Scheme | Huge APP (3MB No OTA) | 8MB with Spiffs (oder 16MB) |
+| Einstellung      | LilyGo T-CAN485       | Waveshare S3 (Mini & Power) | M5Stack Basic + COMMU |
+|---|---|---|---|
+| Board            | ESP32 Dev Module      | ESP32S3 Dev Module          | M5Stack-Core-ESP32 / M5Stack Classic |
+| USB CDC On Boot  | - (egal)              | Enable (Wichtig!)           | - |
+| Flash Mode       | QIO                   | QIO 80MHz                   | QIO |
+| Partition Scheme | Huge APP (3MB No OTA) | 8MB with Spiffs (oder 16MB) | Huge APP / Default |
 
-Tipp für Waveshare S3: Falls der Upload nicht startet: Halte die Taste BOOT, drücke kurz RESET, lasse BOOT los.
+Tipp Waveshare S3: BOOT halten, kurz RESET, BOOT loslassen.  
+M5 COMMU: RS485 A/B und CAN H/L am Modul; Display-UI zeigt Overview/Packs/Network.
 
 #### 3. Erster Start (Smart Mode)
 - Verbinde dich mit dem WLAN `Victron-Gateway-Setup`.
@@ -199,6 +211,7 @@ Open `sketch.ino` in Arduino IDE. At the very top, you must uncomment the lines 
 // 1. HARDWARE (Select ONE)
 #define BOARD_LILYGO        // <-- For T-CAN485
 // #define BOARD_WAVESHARE  // <-- For Waveshare S3 (Mini & Power)
+// #define BOARD_M5STACK    // <-- M5Stack Basic/Core + COMMU
 
 // 2. MODE (Select ONE)
 #define MODE_SMART_WIFI     // <-- Standard (WiFi/Web)

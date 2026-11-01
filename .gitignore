@@ -1,0 +1,11 @@
+﻿.pio/
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+_patch_v203.py
+_patch_v90.py
+release_v202/
+build_check/
+build.log
+.DS_Store
