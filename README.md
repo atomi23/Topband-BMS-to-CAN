@@ -12,9 +12,23 @@ Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. **EET, Power Queen,
 - **M5Stack Basic/Core + COMMU:** RS485 + MCP2515-CAN, lokale UI auf dem 320×240 Display (Buttons A/B/C).
 - Source: `TopbandV2_03_source.ino` bzw. fertige Profile `TopbandV2_03_profile_*`.
 
+### 📦 Download / Release
+Aktuelles Release: **[v2.03](https://github.com/atomi23/Topband-BMS-to-CAN/releases/tag/v2.03)**
+
+| Datei | Zweck |
+|---|---|
+| `TopbandV2_03_source.ino` | Canonical Source (Board oben wählen) |
+| `TopbandV2_03_profile_LilyGo_TCAN485_WLAN.ino` | LilyGo fertig vorkonfiguriert |
+| `TopbandV2_03_profile_WaveshareS3_Minimal_WLAN.ino` | Waveshare S3 fertig vorkonfiguriert |
+| `TopbandV2_03_profile_M5Stack_COMMU_WLAN.ino` | M5Stack + COMMU (Libs: M5Unified, mcp_can) |
+| `TopbandV2_03_LilyGo_TCAN485_WLAN_merged.bin` | Web-Flasher (Offset `0x0`) |
+| `TopbandV2_03_M5Stack_COMMU_WLAN_merged.bin` | Web-Flasher (Offset `0x0`) |
+
+Flashen z.B. über [web.esphome.io](https://web.esphome.io/) oder [Adafruit WebSerial ESPTool](https://adafruit.github.io/Adafruit_WebSerial_ESPTool/) — **merged.bin** wählen.
+
 ## 📸 Dashboard Preview
 
-Das neue V125 Webinterface (Responsive Design für Mobile & Desktop):
+Webinterface (Responsive Design für Mobile & Desktop):
 
 <img width="1435" height="948" alt="image" src="https://github.com/user-attachments/assets/7c1fbbec-3785-4dd2-b581-ba8a500fa5f7" />
 <img width="1425" height="914" alt="image" src="https://github.com/user-attachments/assets/5d60e7f7-6ed3-4683-bbcb-a1623cbbd4c4" />
@@ -35,14 +49,19 @@ Das neue V125 Webinterface (Responsive Design für Mobile & Desktop):
 
 ## 🇩🇪 DEUTSCH / GERMAN
 
-### 🌟 Was ist neu in V125?
+### 🌟 Was ist neu in V2.03?
 
 <details>
 <summary>🔽 <b>Klicken zum Ausklappen: Alle neuen Features & Highlights</b></summary>
 
+#### 0. 🆕 Release V2.03
+- LilyGo CAN/RS485-Korrekturen (offizielle Pinmap, robusteres Polling).
+- Neues Board: **M5Stack Basic/Core + Module COMMU** inkl. Display-UI.
+- Download: [Release v2.03](https://github.com/atomi23/Topband-BMS-to-CAN/releases/tag/v2.03)
+
 #### 1. 🧬 Universal-Architektur
-Es gibt keine getrennten Dateien mehr. Du wählst Hardware und Modus einfach oben im Code:
-- **Hardware:** `LilyGo T-CAN485` (Klassik) oder `Waveshare ESP32-S3` (Mini/Power).
+Ein Code für alle Boards. Hardware und Modus oben im Sketch wählen:
+- **Hardware:** `LilyGo T-CAN485`, `Waveshare ESP32-S3` (Mini/Power), `M5Stack + COMMU`.
 - **Modus:**
   - `SMART_WIFI`: Volles Programm mit Webinterface, MQTT, Home Assistant & Logging.
   - `SIMPLE_CABLE`: "Stealth"-Modus ohne WLAN. Startzeit < 1 Sekunde, Plug & Play Übersetzung.
@@ -73,13 +92,13 @@ Schützt LiFePO4-Zellen aktiv vor Frost-Ladung und Überhitzung.
 
 ### 🛠️ Installation & Anleitung
 
-Da die V125 universell ist, wird sie vor dem Flashen kurz konfiguriert.
+V2.03 ist universell — entweder fertiges **Profil** flashen/kompilieren oder im Source oben Board + Modus wählen.
 
 <details>
 <summary>🔽 <b>Klicken zum Ausklappen: Schritt-für-Schritt Anleitung</b></summary>
 
 #### 1. Code Konfiguration (WICHTIG!)
-Öffne die Datei `sketch.ino` in der Arduino IDE. Ganz oben findest du den Konfigurations-Bereich. Entferne die `//` vor deiner Hardware und deinem Wunsch-Modus:
+Öffne `TopbandV2_03_source.ino` (oder ein `TopbandV2_03_profile_*.ino`) in der Arduino IDE. Ganz oben den Konfigurations-Bereich setzen:
 
 ```cpp
 // 1. HARDWARE (Wähle GENAU EINS)
@@ -167,15 +186,21 @@ graph LR
 
 ## 🇺🇸 ENGLISH / INTERNATIONAL
 
-### 🌟 What's New in V125?
+### 🌟 What's New in V2.03?
 
 <details>
 <summary>🔽 <b>Click to expand: All new Features & Highlights</b></summary>
 
+#### 0. 🆕 Release V2.03
+- LilyGo CAN/RS485 fixes (official pin map, more robust polling).
+- New board: **M5Stack Basic/Core + Module COMMU** with on-device display UI.
+- Download: [Release v2.03](https://github.com/atomi23/Topband-BMS-to-CAN/releases/tag/v2.03)
+
 #### 1. 🧬 Universal Architecture
-No more separate files. One firmware for all hardware, configurable via `#define`:
+One firmware for all hardware, configurable via `#define`:
 - LilyGo T-CAN485 (Classic)
-- Waveshare ESP32-S3 (Supports Mini & Power/Pro versions)
+- Waveshare ESP32-S3 (Mini & Power/Pro)
+- M5Stack Basic/Core + COMMU (RS485 + MCP2515 CAN)
 
 Modes:
 - `SMART_WIFI`: Full features including WebUI, MQTT, HA & Logging.
@@ -205,7 +230,7 @@ Protects LiFePO4 cells from frozen charging and overheating.
 <summary>🔽 <b>Click to expand: Flashing Instructions & Settings</b></summary>
 
 #### 1. Code Configuration (IMPORTANT!)
-Open `sketch.ino` in Arduino IDE. At the very top, you must uncomment the lines matching your hardware and mode:
+Open `TopbandV2_03_source.ino` (or a ready `TopbandV2_03_profile_*.ino`) in Arduino IDE. At the top, select exactly one board and mode:
 
 ```cpp
 // 1. HARDWARE (Select ONE)
@@ -218,16 +243,20 @@ Open `sketch.ino` in Arduino IDE. At the very top, you must uncomment the lines 
 // #define MODE_SIMPLE_CABLE // <-- Stealth (No WiFi)
 ```
 
+Ready profiles: LilyGo / Waveshare / M5Stack COMMU (`TopbandV2_03_profile_*`).  
+Merged web-flasher bins are in the [v2.03 release](https://github.com/atomi23/Topband-BMS-to-CAN/releases/tag/v2.03).
+
 #### 2. Arduino IDE Settings
 
-| Setting          | LilyGo T-CAN485       | Waveshare S3 (Mini & Power) |
-|---|---|---|
-| Board            | ESP32 Dev Module      | ESP32S3 Dev Module          |
-| USB CDC On Boot  | -                     | Enable (Crucial!)           |
-| Flash Mode       | QIO                   | QIO 80MHz                   |
-| Partition Scheme | Huge APP (3MB No OTA) | 8MB with Spiffs (or 16MB)   |
+| Setting          | LilyGo T-CAN485       | Waveshare S3 (Mini & Power) | M5Stack Basic + COMMU |
+|---|---|---|---|
+| Board            | ESP32 Dev Module      | ESP32S3 Dev Module          | M5Stack-Core-ESP32 |
+| USB CDC On Boot  | -                     | Enable (Crucial!)           | - |
+| Flash Mode       | QIO                   | QIO 80MHz                   | QIO |
+| Partition Scheme | Huge APP (3MB No OTA) | 8MB with Spiffs (or 16MB)   | Huge APP / Default |
 
-Tip for Waveshare S3: If upload fails: Hold BOOT button, press RESET, release BOOT.
+Tip for Waveshare S3: If upload fails: Hold BOOT, press RESET, release BOOT.  
+M5 COMMU needs libraries **M5Unified** and **mcp_can**.
 
 #### 3. First Start (Smart Mode)
 - Connect to WiFi hotspot `Victron-Gateway-Setup`.
