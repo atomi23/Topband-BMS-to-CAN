@@ -26,14 +26,17 @@ Aktuelles Release: **[v2.03](https://github.com/atomi23/Topband-BMS-to-CAN/relea
 
 Flashen z.B. über [web.esphome.io](https://web.esphome.io/) oder [Adafruit WebSerial ESPTool](https://adafruit.github.io/Adafruit_WebSerial_ESPTool/) — **merged.bin** wählen.
 
-## 📸 Dashboard Preview
+## 📸 Dashboard Preview (V2.03)
 
-Webinterface (Responsive Design für Mobile & Desktop):
+Webinterface — Desktop-Übersicht, BMS-Zellen, Einstellungen und Mobile:
 
-<img width="1435" height="948" alt="image" src="https://github.com/user-attachments/assets/7c1fbbec-3785-4dd2-b581-ba8a500fa5f7" />
-<img width="1425" height="914" alt="image" src="https://github.com/user-attachments/assets/5d60e7f7-6ed3-4683-bbcb-a1623cbbd4c4" />
-<img width="504" height="294" alt="image" src="https://github.com/user-attachments/assets/6f92dd61-892b-4715-8db4-48bfe97a1a52" />
-<img width="515" height="309" alt="image" src="https://github.com/user-attachments/assets/cf79f679-a5b6-4d94-91ae-0bbb594c42a0" />
+| Dashboard | BMS Detail |
+|---|---|
+| ![Dashboard](docs/screenshots/v203_dashboard.png) | ![BMS Cells](docs/screenshots/v203_bms_detail.png) |
+
+| Settings | Mobile |
+|---|---|
+| ![Settings](docs/screenshots/v203_settings.png) | ![Mobile](docs/screenshots/v203_mobile.png) |
 
 
 ---
