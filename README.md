@@ -28,7 +28,9 @@ Flashen z.B. über [web.esphome.io](https://web.esphome.io/) oder [Adafruit WebS
 
 ## 📸 Dashboard Preview (V2.03)
 
-Webinterface — Desktop-Übersicht, BMS-Zellen, Einstellungen und Mobile:
+Die Screenshots stammen aus einem älteren V2.03-Stand. Im aktuellen `main` heißt die Prozent-Kachel **LADESTAND**; **KAPAZITAET** zeigt weiterhin die Kapazität in Ah. Der Browser-Tab (`Topband V2.03`) und die Dashboard-Überschrift (`Topband V2.03 Master`) werden aus `FW_VERSION` gebildet.
+
+These screenshots are from an earlier V2.03 build. On current `main`, the percentage tile is labeled **STATE OF CHARGE** in English; **CAPACITY** still shows capacity in Ah. The browser tab (`Topband V2.03`) and dashboard heading (`Topband V2.03 Master`) are generated from `FW_VERSION`.
 
 | Dashboard | BMS Detail |
 |---|---|
@@ -78,6 +80,7 @@ Schützt LiFePO4-Zellen aktiv vor Frost-Ladung und Überhitzung.
 
 #### 3. 🏠 Smart Home Ready
 - **Home Assistant:** 100% Auto-Discovery. Keine YAML-Config mehr nötig.
+- **MQTT (aktueller `main`):** Nach einem fehlgeschlagenen Verbindungsversuch wartet das Gateway mindestens 10 Sekunden, bevor es den Broker erneut kontaktiert.
 - **Multi-Protokoll:** Victron (Standard), Pylontech (Deye/Goodwe/Growatt), SMA Sunny Island.
 
 #### 4. 🚦 Status LED 3.0 (Smart Colors)
@@ -136,6 +139,7 @@ M5 COMMU: RS485 A/B und CAN H/L am Modul; Display-UI zeigt Overview/Packs/Networ
 - Verbinde dich mit dem WLAN `Victron-Gateway-Setup`.
 - Öffne `http://192.168.4.1` im Browser.
 - Konfiguriere dein Haus-WLAN.
+- Stelle unter **Einstellungen & Tools → Allgemein → BMS Anzahl** die Anzahl der angeschlossenen BMS ein. Im aktuellen `main` sind **1 bis 16** zulässig; beim Laden und Speichern begrenzt die Firmware den Wert auf diesen Bereich.
 - Wichtig: Gehe danach in Settings -> Profi Mode und prüfe die Zellanzahl (15S oder 16S)!
 
 </details>
@@ -216,6 +220,7 @@ Protects LiFePO4 cells from frozen charging and overheating.
 
 #### 3. 🏠 Smart Home Ready
 - Home Assistant: 100% Auto-Discovery. No YAML configuration needed.
+- MQTT (current `main`): After a failed connection attempt, the gateway waits at least 10 seconds before trying the broker again.
 - Multi-Protocol: Supports Victron (Default), Pylontech (Deye/Goodwe), and SMA Sunny Island.
 
 #### 4. 🚦 Status LED 3.0 (Smart Colors)
@@ -265,6 +270,7 @@ M5 COMMU needs libraries **M5Unified** and **mcp_can**.
 - Connect to WiFi hotspot `Victron-Gateway-Setup`.
 - Open `http://192.168.4.1`.
 - Configure your home WiFi.
+- Set the number of connected BMS units under **Settings & Tools → General → BMS Count**. Current `main` accepts **1 to 16**; the firmware clamps the value to this range when loading and saving it.
 - Important: Go to Settings -> Expert Mode and verify Cell Count (15S/16S)!
 
 </details>
