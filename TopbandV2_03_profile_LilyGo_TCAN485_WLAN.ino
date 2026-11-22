@@ -1599,8 +1599,12 @@ void handleHaDiscoveryClear() {
 }
 
 void mqttReconnect() {
+  static unsigned long last_attempt = 0;
   if (!g_mqtt_enable || g_mqtt_server == "") return;
   if (!mqtt.connected()) {
+    unsigned long now = millis();
+    if (now - last_attempt < 5000) return;
+    last_attempt = now;
     if (mqtt.connect("VictronGW", g_mqtt_user.c_str(), g_mqtt_pass.c_str())) {
       mqtt.publish("victron/status", "online", true);
       if (false && g_ha_enable) {
