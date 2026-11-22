@@ -2,6 +2,7 @@
 
 > **Aktuelle Version / Current Version:** **V2.03** (bzw. rechts bei Releases schauen)  
 > **Supported Hardware:** LilyGo T-CAN485, Waveshare ESP32-S3 (Mini & Power/Pro), **M5Stack Basic/Core + Module COMMU**
+> [Bezugsquellen](#bezugsquellen) · [Where to buy](#where-to-buy)
 
 **Ein Code für alle Boards. Maximale Sicherheit. Volle Kontrolle.** *One Code to rule them all. Max Safety. Full Control.*
 
@@ -28,7 +29,9 @@ Flashen z.B. über [web.esphome.io](https://web.esphome.io/) oder [Adafruit WebS
 
 ## 📸 Dashboard Preview (V2.03)
 
-Webinterface — Desktop-Übersicht, BMS-Zellen, Einstellungen und Mobile:
+Die Screenshots stammen aus einem älteren V2.03-Stand. Im aktuellen `main` heißt die Prozent-Kachel **LADESTAND**; **KAPAZITAET** zeigt weiterhin die Kapazität in Ah. Der Browser-Tab (`Topband V2.03`) und die Dashboard-Überschrift (`Topband V2.03 Master`) werden aus `FW_VERSION` gebildet.
+
+These screenshots are from an earlier V2.03 build. On current `main`, the percentage tile is labeled **STATE OF CHARGE** in English; **CAPACITY** still shows capacity in Ah. The browser tab (`Topband V2.03`) and dashboard heading (`Topband V2.03 Master`) are generated from `FW_VERSION`.
 
 | Dashboard | BMS Detail |
 |---|---|
@@ -36,7 +39,7 @@ Webinterface — Desktop-Übersicht, BMS-Zellen, Einstellungen und Mobile:
 
 | Settings | Mobile |
 |---|---|
-| ![Settings](docs/screenshots/v203_settings.png) | ![Mobile](docs/screenshots/v203_mobile.png) |
+| ![Settings / Einstellungen (MQTT details hidden / MQTT-Daten ausgeblendet)](docs/screenshots/v203_settings.png) | ![Mobile](docs/screenshots/v203_mobile.png) |
 
 
 ---
@@ -78,6 +81,7 @@ Schützt LiFePO4-Zellen aktiv vor Frost-Ladung und Überhitzung.
 
 #### 3. 🏠 Smart Home Ready
 - **Home Assistant:** 100% Auto-Discovery. Keine YAML-Config mehr nötig.
+- **MQTT (aktueller `main`):** Nach einem fehlgeschlagenen Verbindungsversuch wartet das Gateway mindestens 10 Sekunden, bevor es den Broker erneut kontaktiert.
 - **Multi-Protokoll:** Victron (Standard), Pylontech (Deye/Goodwe/Growatt), SMA Sunny Island.
 
 #### 4. 🚦 Status LED 3.0 (Smart Colors)
@@ -96,6 +100,15 @@ Schützt LiFePO4-Zellen aktiv vor Frost-Ladung und Überhitzung.
 ### 🛠️ Installation & Anleitung
 
 V2.03 ist universell — entweder fertiges **Profil** flashen/kompilieren oder im Source oben Board + Modus wählen.
+
+#### Bezugsquellen
+
+- **Gateway-Boards:** [LilyGo T-CAN485](https://www.amazon.de/s?k=LilyGo+T-CAN485&tag=atomi23-21)\*, [Waveshare ESP32-S3 RS485/CAN](https://www.amazon.de/s?k=Waveshare+ESP32-S3+RS485+CAN&tag=atomi23-21)\* ([Mini](https://www.amazon.de/s?k=Waveshare+ESP32-S3+RS485+CAN+Mini&tag=atomi23-21)\*, [Power/Pro](https://www.amazon.de/s?k=Waveshare+ESP32-S3+RS485+CAN+Power+Pro&tag=atomi23-21)\*), [M5Stack Basic/Core (Classic)](https://www.amazon.de/s?k=M5Stack+Basic+Core&tag=atomi23-21)\* mit [M5Stack Module COMMU](https://www.amazon.de/s?k=M5Stack+Module+COMMU&tag=atomi23-21)\* (enthält den MCP2515).
+- **Batterie-Beispiele:** [EET](https://www.amazon.de/s?k=EET+Topband+LiFePO4&tag=atomi23-21)\*, [Power Queen](https://www.amazon.de/s?k=Power+Queen+LiFePO4&tag=atomi23-21)\*, [AmpereTime](https://www.amazon.de/s?k=AmpereTime+LiFePO4&tag=atomi23-21)\*, [Redodo](https://www.amazon.de/s?k=Redodo+LiFePO4&tag=atomi23-21)\*. Prüfe beim konkreten Modell, ob es ein Topband-BMS mit RS485 hat.
+- **Wechselrichter und GX-Geräte:** [Victron Cerbo GX](https://www.amazon.de/s?k=Victron+Cerbo+GX&tag=atomi23-21)\*, [Victron MultiPlus](https://www.amazon.de/s?k=Victron+MultiPlus&tag=atomi23-21)\*, [Deye](https://www.amazon.de/s?k=Deye+Hybrid+Wechselrichter&tag=atomi23-21)\*, [GoodWe](https://www.amazon.de/s?k=GoodWe+Hybrid+Wechselrichter&tag=atomi23-21)\*, [Growatt](https://www.amazon.de/s?k=Growatt+Hybrid+Wechselrichter&tag=atomi23-21)\*, [SMA Sunny Island](https://www.amazon.de/s?k=SMA+Sunny+Island&tag=atomi23-21)\*. Prüfe, welches BMS-Protokoll dein Wechselrichter unterstützt.
+- **Zubehör:** [LAN-Kabel](https://www.amazon.de/s?k=LAN+Kabel+RJ45&tag=atomi23-21)\*, [120-Ω-CAN-Abschlusswiderstand](https://www.amazon.de/s?k=CAN+Bus+Abschlusswiderstand+120+Ohm&tag=atomi23-21)\*, [DC-Sicherung](https://www.amazon.de/s?k=DC+Sicherung+Batterie&tag=atomi23-21)\*, [SD-Karte](https://www.amazon.de/s?k=SD+Speicherkarte&tag=atomi23-21)\*.
+
+\*Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Mit * markierte Links sind Werbe-/Affiliate-Links.
 
 <details>
 <summary>🔽 <b>Klicken zum Ausklappen: Schritt-für-Schritt Anleitung</b></summary>
@@ -136,6 +149,7 @@ M5 COMMU: RS485 A/B und CAN H/L am Modul; Display-UI zeigt Overview/Packs/Networ
 - Verbinde dich mit dem WLAN `Victron-Gateway-Setup`.
 - Öffne `http://192.168.4.1` im Browser.
 - Konfiguriere dein Haus-WLAN.
+- Stelle unter **Einstellungen & Tools → Allgemein → BMS Anzahl** die Anzahl der angeschlossenen BMS ein. Im aktuellen `main` sind **1 bis 16** zulässig; beim Laden und Speichern begrenzt die Firmware den Wert auf diesen Bereich.
 - Wichtig: Gehe danach in Settings -> Profi Mode und prüfe die Zellanzahl (15S oder 16S)!
 
 </details>
@@ -216,6 +230,7 @@ Protects LiFePO4 cells from frozen charging and overheating.
 
 #### 3. 🏠 Smart Home Ready
 - Home Assistant: 100% Auto-Discovery. No YAML configuration needed.
+- MQTT (current `main`): After a failed connection attempt, the gateway waits at least 10 seconds before trying the broker again.
 - Multi-Protocol: Supports Victron (Default), Pylontech (Deye/Goodwe), and SMA Sunny Island.
 
 #### 4. 🚦 Status LED 3.0 (Smart Colors)
@@ -228,6 +243,15 @@ Protects LiFePO4 cells from frozen charging and overheating.
 </details>
 
 ### 🛠️ Installation & Guide
+
+#### Where to buy
+
+- **Gateway boards:** [LilyGo T-CAN485](https://www.amazon.de/s?k=LilyGo+T-CAN485&tag=atomi23-21)\*, [Waveshare ESP32-S3 RS485/CAN](https://www.amazon.de/s?k=Waveshare+ESP32-S3+RS485+CAN&tag=atomi23-21)\* ([Mini](https://www.amazon.de/s?k=Waveshare+ESP32-S3+RS485+CAN+Mini&tag=atomi23-21)\*, [Power/Pro](https://www.amazon.de/s?k=Waveshare+ESP32-S3+RS485+CAN+Power+Pro&tag=atomi23-21)\*), [M5Stack Basic/Core (Classic)](https://www.amazon.de/s?k=M5Stack+Basic+Core&tag=atomi23-21)\* with [M5Stack Module COMMU](https://www.amazon.de/s?k=M5Stack+Module+COMMU&tag=atomi23-21)\* (includes the MCP2515).
+- **Battery examples:** [EET](https://www.amazon.de/s?k=EET+Topband+LiFePO4&tag=atomi23-21)\*, [Power Queen](https://www.amazon.de/s?k=Power+Queen+LiFePO4&tag=atomi23-21)\*, [AmpereTime](https://www.amazon.de/s?k=AmpereTime+LiFePO4&tag=atomi23-21)\*, [Redodo](https://www.amazon.de/s?k=Redodo+LiFePO4&tag=atomi23-21)\*. Check that the specific model has a Topband BMS with RS485.
+- **Inverters and GX devices:** [Victron Cerbo GX](https://www.amazon.de/s?k=Victron+Cerbo+GX&tag=atomi23-21)\*, [Victron MultiPlus](https://www.amazon.de/s?k=Victron+MultiPlus&tag=atomi23-21)\*, [Deye](https://www.amazon.de/s?k=Deye+Hybrid+Wechselrichter&tag=atomi23-21)\*, [GoodWe](https://www.amazon.de/s?k=GoodWe+Hybrid+Wechselrichter&tag=atomi23-21)\*, [Growatt](https://www.amazon.de/s?k=Growatt+Hybrid+Wechselrichter&tag=atomi23-21)\*, [SMA Sunny Island](https://www.amazon.de/s?k=SMA+Sunny+Island&tag=atomi23-21)\*. Check which BMS protocol your inverter supports.
+- **Accessories:** [Ethernet cable](https://www.amazon.de/s?k=LAN+Kabel+RJ45&tag=atomi23-21)\*, [120 Ω CAN terminator](https://www.amazon.de/s?k=CAN+Bus+Abschlusswiderstand+120+Ohm&tag=atomi23-21)\*, [DC fuse](https://www.amazon.de/s?k=DC+Sicherung+Batterie&tag=atomi23-21)\*, [SD card](https://www.amazon.de/s?k=SD+Speicherkarte&tag=atomi23-21)\*.
+
+\*As an Amazon Associate I earn from qualifying purchases. Links marked * are affiliate/advertising links.
 
 <details>
 <summary>🔽 <b>Click to expand: Flashing Instructions & Settings</b></summary>
@@ -265,6 +289,7 @@ M5 COMMU needs libraries **M5Unified** and **mcp_can**.
 - Connect to WiFi hotspot `Victron-Gateway-Setup`.
 - Open `http://192.168.4.1`.
 - Configure your home WiFi.
+- Set the number of connected BMS units under **Settings & Tools → General → BMS Count**. Current `main` accepts **1 to 16**; the firmware clamps the value to this range when loading and saving it.
 - Important: Go to Settings -> Expert Mode and verify Cell Count (15S/16S)!
 
 </details>
