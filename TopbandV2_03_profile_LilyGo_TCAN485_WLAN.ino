@@ -55,6 +55,7 @@ static_assert(sizeof(POLL_CMDS) / sizeof(POLL_CMDS[0]) == MAX_BMS, "POLL_CMDS/MA
 #define HISTORY_INTERVAL 180000 
 #define SD_LOG_INTERVAL 60000
 #define MQTT_INTERVAL 5000
+#define MQTT_RETRY_MS 10000
 #define ALARM_POLL_INTERVAL 15000
 #define SYSPARAM_POLL_INTERVAL 30000
 #define TB_INFO_MAX 256
@@ -1601,13 +1602,20 @@ void handleHaDiscoveryClear() {
 }
 
 void mqttReconnect() {
+  static unsigned long last_fail = 0;
+  static bool retry_pending = false;
   if (!g_mqtt_enable || g_mqtt_server == "") return;
   if (!mqtt.connected()) {
+    if (retry_pending && millis() - last_fail < MQTT_RETRY_MS) return;
     if (mqtt.connect("VictronGW", g_mqtt_user.c_str(), g_mqtt_pass.c_str())) {
+      retry_pending = false;
       mqtt.publish("victron/status", "online", true);
       if (false && g_ha_enable) {
         if (!sendHaDiscovery()) addToLog("HA Discovery: publish failed", true);
       }
+    } else {
+      last_fail = millis();
+      retry_pending = true;
     }
   }
 }
