@@ -11,7 +11,7 @@ An ESP32 gateway reads Topband BMS batteries (e.g. **EET, Power Queen, AmpereTim
 ## Quick links
 
 - [Installation and flashing](docs/installation.en.md) · [Downloads and profiles](docs/installation.en.md#downloads)
-- [Hardware and wiring](docs/hardware.en.md) · [Where to buy](docs/hardware.en.md#where-to-buy)
+- [Hardware and wiring](docs/hardware.en.md) · [Where to buy](docs/hardware.en.md#where-to-buy) · [Accessories](docs/hardware.en.md#accessories)
 - [Web interface and settings](docs/webinterface.en.md) · [Dashboard screenshots](docs/webinterface.en.md#dashboard)
 - [MQTT and Home Assistant](docs/mqtt.en.md)
 - [What's new in V2.03](docs/installation.en.md#whats-new-in-v203) · [Release notes](RELEASE_NOTES_V2_03.md)

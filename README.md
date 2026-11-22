@@ -11,7 +11,7 @@ Ein ESP32-basiertes Gateway, das Topband-BMS-Batterien (z.B. **EET, Power Queen,
 ## Schnellzugriff
 
 - [Installation und Flashen](docs/installation.md) · [Downloads und Profile](docs/installation.md#downloads)
-- [Hardware und Verkabelung](docs/hardware.md) · [Bezugsquellen](docs/hardware.md#bezugsquellen)
+- [Hardware und Verkabelung](docs/hardware.md) · [Bezugsquellen](docs/hardware.md#bezugsquellen) · [Zubehör](docs/hardware.md#zubehör)
 - [Webinterface und Einstellungen](docs/webinterface.md) · [Dashboard-Screenshots](docs/webinterface.md#dashboard)
 - [MQTT und Home Assistant](docs/mqtt.md)
 - [Änderungen in V2.03](docs/installation.md#neu-in-v203) · [Release Notes (Englisch)](RELEASE_NOTES_V2_03.md)
