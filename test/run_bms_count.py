@@ -20,6 +20,6 @@ with tempfile.TemporaryDirectory(prefix="bms-count-") as directory:
     )
     binary = build / "bms_count"
     subprocess.run(["c++", "-std=c++11", "-Wall", "-Wextra", "-Werror",
-                    "-I", str(root), "-I", str(build),
+                    "-I", str(build),
                     str(root / "test/bms_count.cpp"), "-o", str(binary)], check=True)
     sys.exit(subprocess.run([str(binary)]).returncode)

@@ -1,10 +1,10 @@
-#include <climits>
 #include <cstdlib>
 #include <iostream>
 #include <string>
 
-#include "bms_count.h"
 #include "bms_count_paths.h"
+
+#define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 
 struct Arg {
   std::string value;
@@ -36,15 +36,9 @@ int main() {
       int g_bms_count = 2;
       if (save) { SAVE_COUNT; } else { LOAD_COUNT; }
       if (g_bms_count != expected) {
-        std::cout << (save ? "save" : "load") << " input=\"" << input
+        std::cout << "OUT OF BOUNDS: " << (save ? "save" : "load") << " input=\"" << input
                   << "\" count=" << g_bms_count << " expected=" << expected << '\n';
         ++failures;
-      }
-      for (int i = 0; i < g_bms_count; ++i) {
-        if (i >= MAX_BMS) {
-          std::cout << "OUT OF BOUNDS: index " << i << " >= MAX_BMS (" << MAX_BMS << ")\n";
-          break;
-        }
       }
     }
   }

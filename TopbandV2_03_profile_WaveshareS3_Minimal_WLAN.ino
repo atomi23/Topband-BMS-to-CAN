@@ -12,7 +12,6 @@
 #include <Preferences.h>
 #include <SD.h>
 #include <SPI.h>
-#include "bms_count.h"
 
 // ==========================================
 // 1. HARDWARE (genau EINS aktivieren)
@@ -1966,7 +1965,7 @@ void handleServiceBmsDiag() {
 void handleSim() { if (server.hasArg("act")) simulation_active = (server.arg("act") == "1"); server.send(200); }
 void handleSave() {
   saveHistory(true); delay(100); preferences.begin("gateway", false); 
-  if (server.hasArg("cnt")) g_bms_count = clampBmsCount(server.arg("cnt").toInt(), MAX_BMS);
+  if (server.hasArg("cnt")) g_bms_count = constrain(server.arg("cnt").toInt(), 1, MAX_BMS);
   if (server.hasArg("cells")) g_force_cell_count = server.arg("cells").toInt();
   if (server.hasArg("soc_mode")) g_soc_source_mode = server.arg("soc_mode").toInt();
   if (g_soc_source_mode < 0 || g_soc_source_mode > 2) g_soc_source_mode = 2;
@@ -2593,7 +2592,7 @@ void setup() {
 
     // 2. JETZT ERST SETTINGS LADEN
     preferences.begin("gateway", false);
-    g_bms_count = clampBmsCount(preferences.getInt("cnt", 2), MAX_BMS);
+    g_bms_count = constrain(preferences.getInt("cnt", 2), 1, MAX_BMS);
     g_force_cell_count = preferences.getInt("cells", 0);
     g_charge_amps = preferences.getFloat("chg", 30.0);
     g_discharge_amps = preferences.getFloat("dis", 30.0);
