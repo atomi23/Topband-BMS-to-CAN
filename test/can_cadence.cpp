@@ -1,0 +1,148 @@
+#include <algorithm>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <string>
+#include <vector>
+
+#include "sketch_config.h"
+
+class String : public std::string {
+ public:
+  using std::string::string;
+  String(int value) : std::string(std::to_string(value)) {}
+  int indexOf(char ch) const { return find(ch) == npos ? -1 : static_cast<int>(find(ch)); }
+  String substring(int begin, int end = -1) const {
+    return String(substr(begin, end == -1 ? npos : end - begin).c_str());
+  }
+};
+
+static unsigned long clock_us;
+unsigned long millis() { return clock_us / 1000; }
+void delay(unsigned long ms) { clock_us += ms * 1000; }
+void delayMicroseconds(unsigned long us) { clock_us += us; }
+void yield() {}
+void esp_task_wdt_reset() {}
+enum { PIN_RS485_DIR, HIGH, LOW };
+void digitalWrite(int, int) {}
+
+struct Poll { std::string command; unsigned long start_us; unsigned long done_us; };
+struct SerialStub {
+  std::string pending;
+  std::vector<Poll> polls;
+  bool reply = false;
+  void print(const String &command) {
+    polls.push_back({command, clock_us, 0});
+  }
+  void flush() {
+    clock_us += polls.back().command.size() * 10 * 1000000 / RS485_BAUD;
+    polls.back().done_us = clock_us;
+    if (reply) pending = "~1234\r";
+  }
+  bool available() const { return !pending.empty(); }
+  char read() {
+    const char byte = pending.front();
+    pending.erase(0, 1);
+    return byte;
+  }
+} RS485;
+
+constexpr int g_bms_count = 12;
+unsigned long last_poll_time, last_can_time, last_hist_time, last_sd_time, last_mqtt_time;
+unsigned long last_alarm_poll_time, last_sysparam_poll_time;
+int next_alarm_poll_bms, next_sysparam_poll_bms;
+bool g_rs485_service_busy, simulation_active, g_sd_enable, g_mqtt_enable;
+bool g_victron_enable = true;
+int g_can_protocol;
+float g_cvl_voltage = 52.5f, g_runtime_cvl;
+uint8_t alarm_flags;
+struct {
+  float maxChargeCurrent, maxDischargeCurrent, avgSOC, avgSOH, totalCapacity;
+  float avgVoltage, totalCurrent, avgTemp;
+} victronData;
+
+void handleLedStatus() {}
+void updateHistory() {}
+void calculateEnergy() {}
+void writeLogToSD() {}
+void mqttReconnect() {}
+void sendMqttData() {}
+void pollBmsAlarmStatus(int) {}
+void pollBmsSystemParameter(int) {}
+void addToLog(const std::string &, bool) {}
+struct { void handleClient() {} } server;
+enum { WL_CONNECTED = 1 };
+struct { int status() const { return 0; } } WiFi;
+struct { bool connected() const { return false; } void loop() {} } mqtt;
+
+std::vector<int> parsed;
+bool payload_ok = true;
+void parseTopband(const String &payload, int index) {
+  payload_ok &= payload == "1234";
+  parsed.push_back(index);
+}
+
+struct Frame { uint32_t id; unsigned long ms; };
+std::vector<Frame> frames;
+void sendCanFrame(uint32_t id, uint8_t *) { frames.push_back({id, millis()}); }
+void calculateVictronData() {}
+
+#include "sketch_paths.h"
+
+bool testSweep(bool reply) {
+  constexpr unsigned long period_ms = 500;
+  constexpr uint32_t ids[] = {0x351, 0x355, 0x356, 0x35A, 0x35E};
+  // Start the first sweep when the original loop also has a CAN cycle due.
+  last_poll_time = 5;
+  clock_us = last_poll_time * 1000;
+  last_can_time = 0;
+  last_alarm_poll_time = last_sysparam_poll_time = 0;
+  RS485 = SerialStub{};
+  RS485.reply = reply;
+  parsed.clear();
+  frames.clear();
+  payload_ok = true;
+
+  while (RS485.polls.size() < g_bms_count && millis() < 30000) {
+    loop();
+    delay(1);
+  }
+
+  bool polls_ok = RS485.polls.size() == g_bms_count;
+  bool parses_ok = payload_ok && parsed.size() == (reply ? g_bms_count : 0);
+  for (size_t i = 0; i < RS485.polls.size() && i < g_bms_count; ++i) {
+    polls_ok &= RS485.polls[i].command == POLL_CMDS[i];
+    if (i > 0) {
+      const auto receive_ms = reply ? 0 : RS485_TIMEOUT;
+      polls_ok &= RS485.polls[i].start_us >= RS485.polls[i - 1].done_us
+                                          + (receive_ms + BUS_GUARD_TIME) * 1000;
+    }
+    if (reply && i < parsed.size()) parses_ok &= parsed[i] == static_cast<int>(i);
+  }
+  bool frames_ok = !frames.empty() && frames.size() % 5 == 0;
+  unsigned long previous = 0, max_gap = 0;
+  size_t cycles = 0;
+  const auto poll_start = RS485.polls.empty() ? millis() : RS485.polls.front().start_us / 1000;
+  for (size_t i = 0; i < frames.size(); ++i) {
+    frames_ok &= frames[i].id == ids[i % 5];
+    if (i % 5 != 0) continue;
+    max_gap = std::max(max_gap, frames[i].ms - previous);
+    frames_ok &= frames[i].ms - previous >= period_ms;
+    previous = frames[i].ms;
+    if (previous >= poll_start) ++cycles;
+  }
+  max_gap = std::max(max_gap, millis() - previous);
+  // One in-flight UART command and transceiver turnaround can defer a CAN cycle.
+  const auto tx_budget = (std::strlen(POLL_CMDS[0]) * 10 * 1000 + RS485_BAUD - 1) / RS485_BAUD + 6;
+  const bool ok = polls_ok && parses_ok && frames_ok && max_gap <= period_ms + tx_budget;
+  std::printf("%s: %zu polls, %zu CAN 0x351 cycles from sweep start, max gap %lu ms [%s]\n",
+              reply ? "12 replying packs" : "12 timeouts", RS485.polls.size(), cycles,
+              max_gap, ok ? "PASS" : "FAIL");
+  return ok;
+}
+
+int main() {
+  const bool replying = testSweep(true);
+  const bool timeouts = testSweep(false);
+  return replying && timeouts ? 0 : 1;
+}

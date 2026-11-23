@@ -49,6 +49,7 @@ static_assert(sizeof(POLL_CMDS) / sizeof(POLL_CMDS[0]) == MAX_BMS, "POLL_CMDS/MA
 #define POLL_INTERVAL 3000
 #define RS485_TIMEOUT 1500
 #define BUS_GUARD_TIME 300
+#define CAN_INTERVAL 500
 #define UI_INTERVAL 1000
 #define WDT_TIMEOUT 10 
 #define HISTORY_LEN 960 
@@ -151,6 +152,7 @@ unsigned long last_ui_time = 0;
 
 void setLed(int r, int g, int b);
 void addToLog(String msg, bool error);
+static void serviceCan();
 int tbSelectSocValue(int soc_calc, int soc_raw, bool raw_valid, bool extended_layout);
 #ifdef MODE_SMART_WIFI
 void mqttReconnect();
@@ -512,6 +514,7 @@ bool rs485ExchangeFrame(const String &cmd, String &resp, uint32_t timeout_ms) {
   resp = "";
   resp.reserve(512);
 
+  serviceCan();
   #if defined(BOARD_WAVESHARE)
     digitalWrite(PIN_RS485_DIR, HIGH);
     delayMicroseconds(100);
@@ -544,6 +547,8 @@ bool rs485ExchangeFrame(const String &cmd, String &resp, uint32_t timeout_ms) {
       delay(1);
       yield();
     }
+    // Keep CAN and BMS state on the same thread while waiting for RS485.
+    serviceCan();
   }
 
   g_rs485_service_busy = false;
@@ -1476,6 +1481,14 @@ void sendVictronCAN() {
   if(g_can_protocol == 1) { char n[] = "PYLON   "; sendCanFrame(0x35E, (uint8_t*)n); }
   else if(g_can_protocol == 2) { char n[] = "SMA     "; sendCanFrame(0x35E, (uint8_t*)n); }
   else { char n[] = "TOPBAND "; sendCanFrame(0x35E, (uint8_t*)n); } 
+}
+
+static void serviceCan() {
+  const unsigned long now = millis();
+  if (now - last_can_time < CAN_INTERVAL) return;
+  last_can_time = now;
+  calculateVictronData();
+  if (g_victron_enable) sendVictronCAN();
 }
 
 #ifdef MODE_SMART_WIFI
@@ -2721,6 +2734,7 @@ void setup() {
 
 void loop() {
   esp_task_wdt_reset(); 
+  serviceCan();
   unsigned long now = millis();
 
   static unsigned long last_led = 0;
@@ -2774,17 +2788,13 @@ void loop() {
         addToLog("Timeout BMS " + String(i), true);
 #endif
       }
-      delay(BUS_GUARD_TIME);
+      const unsigned long guard_start = millis();
+      while (millis() - guard_start < BUS_GUARD_TIME) {
+        serviceCan();
+        delay(1);
+      }
     }
   }
-  
-  if (now - last_can_time > 500) {
-    last_can_time = now;
-    calculateVictronData();
-    if (g_victron_enable) { sendVictronCAN(); }
-  }
 }
-
-
 
 
