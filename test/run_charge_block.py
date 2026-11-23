@@ -16,7 +16,8 @@ def extract(start, end):
 
 sections = [
     re.search(r"^#define MAX_BMS\s+\d+", text, re.M)[0],
-    extract("int g_bms_count =", "struct TBFrame"),
+    extract("int g_bms_count =", "unsigned long last_poll_time"),
+    extract("bool can_error_flag", "struct TBFrame"),
     extract("struct TBSysParam", "struct TBAlarmInfoParsed"),
     extract("uint64_t g_bms_alarm_bits", "// --- HELPERS ---"),
     extract("const uint64_t TB_CRITICAL_ALARM_MASK", "bool tbHasCriticalAlarm"),
