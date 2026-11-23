@@ -2658,6 +2658,7 @@ void setup() {
     g_mqtt_user = preferences.getString("mq_us", "");
     g_mqtt_pass = preferences.getString("mq_pw", "");
     g_ntp_server = preferences.getString("ntp", "pool.ntp.org"); g_timezone_offset = preferences.getInt("tz", 1);
+    g_ntp_server.trim(); if (g_ntp_server.length() == 0) g_ntp_server = "pool.ntp.org";
     preferences.end();
     if (WiFi.status() == WL_CONNECTED) configTime(g_timezone_offset * 3600, 0, g_ntp_server.c_str());
     

@@ -18,6 +18,11 @@ struct String {
   template <class T, class = typename std::enable_if<std::is_arithmetic<T>::value>::type>
   String(T number) : value(std::to_string(number)) {}
   const char *c_str() const { return value.c_str(); }
+  unsigned int length() const { return value.size(); }
+  void trim() {
+    value.erase(0, value.find_first_not_of(" \t\r\n"));
+    value.erase(value.find_last_not_of(" \t\r\n") + 1);
+  }
   bool operator==(const char *other) const { return value == other; }
   bool operator!=(const char *other) const { return value != other; }
   String operator+(const String &other) const { return value + other.value; }
@@ -135,6 +140,10 @@ int main() {
   expect(configure_calls == 1 && configured_server == "de.pool.ntp.org" && configured_offset == 2 * 3600,
          "boot: configTime uses saved NTP settings (got " + configured_server + ", " +
              std::to_string(configured_offset) + " s, " + std::to_string(configure_calls) + " call)");
+  preferences.strings["ntp"] = "  ";
+  bootNetworkAndSettings();
+  expect(configure_calls == 2 && configured_server == "pool.ntp.org",
+         "boot: blank saved NTP server falls back to pool.ntp.org (got \"" + configured_server + "\")");
 
   fake_millis = 1000;
   calculateEnergy();
