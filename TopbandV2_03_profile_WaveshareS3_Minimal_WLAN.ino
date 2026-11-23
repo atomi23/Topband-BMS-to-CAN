@@ -57,8 +57,10 @@ static_assert(sizeof(POLL_CMDS) / sizeof(POLL_CMDS[0]) == MAX_BMS, "POLL_CMDS/MA
 #define SD_LOG_INTERVAL 60000
 #define MQTT_INTERVAL 5000
 #define MQTT_RETRY_MS 10000
-#define ALARM_POLL_INTERVAL 15000
-#define SYSPARAM_POLL_INTERVAL 30000
+#define ALARM_POLL_INTERVAL 15000UL
+#define SYSPARAM_POLL_INTERVAL 30000UL
+#define ALARM_REFRESH_TARGET 40000UL
+#define SYSPARAM_REFRESH_TARGET 200000UL
 #define TB_INFO_MAX 256
 
 #if defined(BOARD_LILYGO)
@@ -2776,18 +2778,6 @@ void loop() {
     if (g_sd_enable && (now_hist - last_sd_time > SD_LOG_INTERVAL)) { last_sd_time = now_hist; writeLogToSD(); }
     mqttReconnect();
     if (g_mqtt_enable && WiFi.status() == WL_CONNECTED && mqtt.connected()) { mqtt.loop(); if (now_hist - last_mqtt_time > MQTT_INTERVAL) { last_mqtt_time = now_hist; sendMqttData(); } }
-    if (!g_rs485_service_busy && !simulation_active && (now - last_alarm_poll_time > ALARM_POLL_INTERVAL)) {
-      last_alarm_poll_time = now;
-      pollBmsAlarmStatus(next_alarm_poll_bms);
-      next_alarm_poll_bms++;
-      if (next_alarm_poll_bms >= g_bms_count) next_alarm_poll_bms = 0;
-    }
-    if (!g_rs485_service_busy && !simulation_active && (now - last_sysparam_poll_time > SYSPARAM_POLL_INTERVAL)) {
-      last_sysparam_poll_time = now;
-      pollBmsSystemParameter(next_sysparam_poll_bms);
-      next_sysparam_poll_bms++;
-      if (next_sysparam_poll_bms >= g_bms_count) next_sysparam_poll_bms = 0;
-    }
   #endif
 
 #if HAS_M5_UI
@@ -2822,6 +2812,23 @@ void loop() {
         serviceCan();
         delay(1);
       }
+      #ifdef MODE_SMART_WIFI
+        // Budget the whole rotation and service it between guarded telemetry requests.
+        unsigned long aux_now = millis();
+        if (aux_now - last_alarm_poll_time >= min(ALARM_POLL_INTERVAL, ALARM_REFRESH_TARGET / g_bms_count)) {
+          last_alarm_poll_time = aux_now;
+          if (next_alarm_poll_bms >= g_bms_count) next_alarm_poll_bms = 0;
+          pollBmsAlarmStatus(next_alarm_poll_bms++);
+          if (next_alarm_poll_bms >= g_bms_count) next_alarm_poll_bms = 0;
+        }
+        aux_now = millis();
+        if (aux_now - last_sysparam_poll_time >= min(SYSPARAM_POLL_INTERVAL, SYSPARAM_REFRESH_TARGET / g_bms_count)) {
+          last_sysparam_poll_time = aux_now;
+          if (next_sysparam_poll_bms >= g_bms_count) next_sysparam_poll_bms = 0;
+          pollBmsSystemParameter(next_sysparam_poll_bms++);
+          if (next_sysparam_poll_bms >= g_bms_count) next_sysparam_poll_bms = 0;
+        }
+      #endif
     }
     bms_sweep_in_progress = false;
     // Refresh the limits before another sweep can start, even if CAN is not due yet.

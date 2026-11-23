@@ -8,6 +8,8 @@
 
 #include "sketch_config.h"
 
+using std::min;
+
 class String : public std::string {
  public:
   using std::string::string;
@@ -32,15 +34,17 @@ struct SerialStub {
   std::string pending;
   std::vector<Poll> polls;
   bool reply = false;
+  unsigned long reply_ms = 0, ready_us = 0;
   void print(const String &command) {
     polls.push_back({command, clock_us, 0});
   }
   void flush() {
     clock_us += polls.back().command.size() * 10 * 1000000 / RS485_BAUD;
     polls.back().done_us = clock_us;
+    ready_us = clock_us + reply_ms * 1000;
     if (reply) pending = "~1234\r";
   }
-  bool available() const { return !pending.empty(); }
+  bool available() const { return !pending.empty() && clock_us >= ready_us; }
   char read() {
     const char byte = pending.front();
     pending.erase(0, 1);
@@ -69,8 +73,16 @@ void calculateEnergy() {}
 void writeLogToSD() {}
 void mqttReconnect() {}
 void sendMqttData() {}
-void pollBmsAlarmStatus(int) {}
-void pollBmsSystemParameter(int) {}
+static unsigned long auxiliary_reply_ms;
+static std::vector<unsigned long> alarm_refreshes[g_bms_count], sysparam_refreshes[g_bms_count];
+void pollBmsAlarmStatus(int pack) {
+  delay(auxiliary_reply_ms);
+  alarm_refreshes[pack].push_back(millis());
+}
+void pollBmsSystemParameter(int pack) {
+  delay(auxiliary_reply_ms);
+  sysparam_refreshes[pack].push_back(millis());
+}
 void addToLog(const std::string &, bool) {}
 struct { void handleClient() {} } server;
 enum { WL_CONNECTED = 1 };
@@ -189,10 +201,63 @@ bool testStartupLimits(bool late_alarm) {
   return ok;
 }
 
+struct RefreshAge {
+  unsigned long max_ms = 0;
+  bool within(unsigned long limit_ms) const { return max_ms < limit_ms; }
+  void measure(const std::vector<unsigned long> &refreshes, unsigned long previous = 0) {
+    for (auto refresh : refreshes) {
+      max_ms = std::max(max_ms, refresh - previous);
+      previous = refresh;
+    }
+    max_ms = std::max(max_ms, millis() - previous);
+  }
+};
+
+bool testRefresh(unsigned long primary_reply_ms, unsigned long aux_ms) {
+  resetTest(true);
+  RS485.reply_ms = primary_reply_ms;
+  auxiliary_reply_ms = aux_ms;
+  next_alarm_poll_bms = next_sysparam_poll_bms = 0;
+  for (int pack = 0; pack < g_bms_count; ++pack) {
+    alarm_refreshes[pack].clear();
+    sysparam_refreshes[pack].clear();
+  }
+  while (millis() < 900000) {
+    loop();
+    delay(1);
+  }
+  RefreshAge alarms, sysparams, telemetry;
+  bool poll_order = true;
+  for (int pack = 0; pack < g_bms_count; ++pack) {
+    alarms.measure(alarm_refreshes[pack]);
+    sysparams.measure(sysparam_refreshes[pack]);
+    std::vector<unsigned long> polls;
+    for (size_t i = pack; i < RS485.polls.size(); i += g_bms_count) {
+      poll_order &= RS485.polls[i].command == POLL_CMDS[pack];
+      polls.push_back(RS485.polls[i].start_us / 1000);
+    }
+    telemetry.measure(polls, polls.empty() ? 0 : polls.front());
+  }
+  const auto tx_ms = (std::strlen(POLL_CMDS[0]) * 10 * 1000 + RS485_BAUD - 1) / RS485_BAUD;
+  const auto primary_budget = g_bms_count * (BUS_GUARD_TIME + primary_reply_ms + tx_ms + 7);
+  const auto telemetry_limit = std::max(POLL_INTERVAL + 1ul, primary_budget + 1) + 3 * aux_ms;
+  const bool telemetry_ok = poll_order && payload_ok && telemetry.max_ms <= telemetry_limit;
+  const bool ok = alarms.within(60000) && sysparams.within(300000) && telemetry_ok;
+  std::printf("12 packs (%lu ms telemetry reply, %lu ms auxiliary exchange): "
+              "max per-pack refresh ages: alarm %lu/60000 ms, system params %lu/300000 ms; "
+              "telemetry max %lu/%lu ms [%s]\n",
+              primary_reply_ms, aux_ms, alarms.max_ms, sysparams.max_ms,
+              telemetry.max_ms, telemetry_limit, ok ? "PASS" : "FAIL");
+  return ok;
+}
+
 int main() {
   const bool replying = testSweep(true);
   const bool timeouts = testSweep(false);
   const bool startup_healthy = testStartupLimits(false);
   const bool startup_alarm = testStartupLimits(true);
-  return replying && timeouts && startup_healthy && startup_alarm ? 0 : 1;
+  const bool immediate_refresh = testRefresh(0, 0);
+  const bool delayed_refresh = testRefresh(150, 150);
+  return replying && timeouts && startup_healthy && startup_alarm
+      && immediate_refresh && delayed_refresh ? 0 : 1;
 }

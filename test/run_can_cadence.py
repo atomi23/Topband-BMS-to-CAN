@@ -15,7 +15,8 @@ with tempfile.TemporaryDirectory(prefix="can-cadence-") as directory:
         defines = re.findall(
             r"^#define (?:BOARD_\w+|MODE_\w+|MAX_BMS|RS485_BAUD|POLL_INTERVAL|RS485_TIMEOUT|"
             r"BUS_GUARD_TIME|CAN_INTERVAL|HISTORY_INTERVAL|SD_LOG_INTERVAL|MQTT_INTERVAL|"
-            r"ALARM_POLL_INTERVAL|SYSPARAM_POLL_INTERVAL)\b[^\n]*", sketch, re.M
+            r"ALARM_POLL_INTERVAL|SYSPARAM_POLL_INTERVAL|ALARM_REFRESH_TARGET|SYSPARAM_REFRESH_TARGET)\b[^\n]*",
+            sketch, re.M
         )
         commands = re.search(r"^const char \*POLL_CMDS\[\] = \{[^}]+\};", sketch, re.M)[0]
         (build / "sketch_config.h").write_text("\n".join([*defines, commands]))
