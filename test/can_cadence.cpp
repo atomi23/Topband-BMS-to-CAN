@@ -69,7 +69,8 @@ struct {
 
 void handleLedStatus() {}
 void updateHistory() {}
-void calculateEnergy() {}
+static unsigned long energy_clock_wait_ms;
+void calculateEnergy() { delay(energy_clock_wait_ms); }
 void writeLogToSD() {}
 void mqttReconnect() {}
 void sendMqttData() {}
@@ -213,10 +214,11 @@ struct RefreshAge {
   }
 };
 
-bool testRefresh(unsigned long primary_reply_ms, unsigned long aux_ms) {
+bool testRefresh(unsigned long primary_reply_ms, unsigned long aux_ms, unsigned long clock_wait_ms = 0) {
   resetTest(true);
   RS485.reply_ms = primary_reply_ms;
   auxiliary_reply_ms = aux_ms;
+  energy_clock_wait_ms = clock_wait_ms;
   next_alarm_poll_bms = next_sysparam_poll_bms = 0;
   for (int pack = 0; pack < g_bms_count; ++pack) {
     alarm_refreshes[pack].clear();
@@ -240,13 +242,13 @@ bool testRefresh(unsigned long primary_reply_ms, unsigned long aux_ms) {
   }
   const auto tx_ms = (std::strlen(POLL_CMDS[0]) * 10 * 1000 + RS485_BAUD - 1) / RS485_BAUD;
   const auto primary_budget = g_bms_count * (BUS_GUARD_TIME + primary_reply_ms + tx_ms + 7);
-  const auto telemetry_limit = std::max(POLL_INTERVAL + 1ul, primary_budget + 1) + 3 * aux_ms;
+  const auto telemetry_limit = std::max(POLL_INTERVAL + 1ul, primary_budget + 1) + 4 * aux_ms + clock_wait_ms;
   const bool telemetry_ok = poll_order && payload_ok && telemetry.max_ms <= telemetry_limit;
   const bool ok = alarms.within(60000) && sysparams.within(300000) && telemetry_ok;
-  std::printf("12 packs (%lu ms telemetry reply, %lu ms auxiliary exchange): "
+  std::printf("12 packs (%lu ms telemetry reply, %lu ms auxiliary exchange%s): "
               "max per-pack refresh ages: alarm %lu/60000 ms, system params %lu/300000 ms; "
               "telemetry max %lu/%lu ms [%s]\n",
-              primary_reply_ms, aux_ms, alarms.max_ms, sysparams.max_ms,
+              primary_reply_ms, aux_ms, clock_wait_ms ? ", unsynced NTP" : "", alarms.max_ms, sysparams.max_ms,
               telemetry.max_ms, telemetry_limit, ok ? "PASS" : "FAIL");
   return ok;
 }
@@ -258,6 +260,7 @@ int main() {
   const bool startup_alarm = testStartupLimits(true);
   const bool immediate_refresh = testRefresh(0, 0);
   const bool delayed_refresh = testRefresh(150, 150);
+  const bool unsynced_refresh = testRefresh(150, 150, 5010);
   return replying && timeouts && startup_healthy && startup_alarm
-      && immediate_refresh && delayed_refresh ? 0 : 1;
+      && immediate_refresh && delayed_refresh && unsynced_refresh ? 0 : 1;
 }
