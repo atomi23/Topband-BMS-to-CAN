@@ -510,6 +510,8 @@ String tbBuildCommand(uint8_t addr, uint8_t cid2, const uint8_t *info, size_t in
 }
 
 bool rs485ExchangeFrame(const String &cmd, String &resp, uint32_t timeout_ms) {
+  static bool exchanged = false;
+  static unsigned long last_exchange_end = 0;
   if (g_rs485_service_busy) return false;
   g_rs485_service_busy = true;
 
@@ -518,6 +520,10 @@ bool rs485ExchangeFrame(const String &cmd, String &resp, uint32_t timeout_ms) {
   resp.reserve(512);
 
   serviceCan();
+  while (exchanged && millis() - last_exchange_end < BUS_GUARD_TIME) {
+    serviceCan();
+    delay(1);
+  }
   #if defined(BOARD_WAVESHARE)
     digitalWrite(PIN_RS485_DIR, HIGH);
     delayMicroseconds(100);
@@ -554,6 +560,8 @@ bool rs485ExchangeFrame(const String &cmd, String &resp, uint32_t timeout_ms) {
     serviceCan();
   }
 
+  last_exchange_end = millis();
+  exchanged = true;
   g_rs485_service_busy = false;
   return ok && resp.length() > 0;
 }
@@ -2807,13 +2815,8 @@ void loop() {
         addToLog("Timeout BMS " + String(i), true);
 #endif
       }
-      const unsigned long guard_start = millis();
-      while (millis() - guard_start < BUS_GUARD_TIME) {
-        serviceCan();
-        delay(1);
-      }
       #ifdef MODE_SMART_WIFI
-        // Budget the whole rotation and service it between guarded telemetry requests.
+        // Budget the whole rotation and service it between telemetry requests.
         unsigned long aux_now = millis();
         if (aux_now - last_alarm_poll_time >= min(ALARM_POLL_INTERVAL, ALARM_REFRESH_TARGET / g_bms_count)) {
           last_alarm_poll_time = aux_now;
