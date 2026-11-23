@@ -49,6 +49,7 @@ static_assert(sizeof(POLL_CMDS) / sizeof(POLL_CMDS[0]) == MAX_BMS, "POLL_CMDS/MA
 #define POLL_INTERVAL 3000
 #define RS485_TIMEOUT 1500
 #define BUS_GUARD_TIME 300
+#define CAN_INTERVAL 500
 #define UI_INTERVAL 1000
 #define WDT_TIMEOUT 10 
 #define HISTORY_LEN 960 
@@ -151,6 +152,7 @@ unsigned long last_ui_time = 0;
 
 void setLed(int r, int g, int b);
 void addToLog(String msg, bool error);
+static void serviceCan();
 int tbSelectSocValue(int soc_calc, int soc_raw, bool raw_valid, bool extended_layout);
 #ifdef MODE_SMART_WIFI
 void mqttReconnect();
@@ -192,6 +194,7 @@ bool g_runtime_balance_reached_prev = false;
 float factor_charge = 1.0; float factor_discharge = 1.0;
 
 unsigned long last_poll_time = 0; unsigned long last_can_time = 0;
+static bool bms_sweep_in_progress = false;
 unsigned long stat_rx_count = 0; unsigned long stat_tx_count = 0;
 bool can_error_flag = false; uint8_t alarm_flags = 0; String sys_error_msg = "OK"; bool simulation_active = false;
 volatile bool g_rs485_service_busy = false;
@@ -512,6 +515,7 @@ bool rs485ExchangeFrame(const String &cmd, String &resp, uint32_t timeout_ms) {
   resp = "";
   resp.reserve(512);
 
+  serviceCan();
   #if defined(BOARD_WAVESHARE)
     digitalWrite(PIN_RS485_DIR, HIGH);
     delayMicroseconds(100);
@@ -544,6 +548,8 @@ bool rs485ExchangeFrame(const String &cmd, String &resp, uint32_t timeout_ms) {
       delay(1);
       yield();
     }
+    // Keep CAN and BMS state on the same thread while waiting for RS485.
+    serviceCan();
   }
 
   g_rs485_service_busy = false;
@@ -1247,7 +1253,7 @@ void saveAutoBalanceTimestamp(uint32_t ts) {
   preferences.end();
 }
 
-void calculateVictronData() {
+void calculateVictronData(bool completeSweep = true) {
   float sumI = 0, sumV = 0, sumSOC = 0, sumSOH = 0, sumCap = 0, sumRem = 0;
   double sumT = 0;
   int temp_samples = 0;
@@ -1256,10 +1262,12 @@ void calculateVictronData() {
   int first_proto_idx = -1;
   int proto_count = 0;
   int count = 0; alarm_flags = 0; sys_error_msg = "OK";
+  if (completeSweep) {
   #ifdef MODE_SIMPLE_CABLE
     if(g_detected_cells > 0) { g_cvl_voltage = g_detected_cells * 3.5; g_safe_volt = g_detected_cells * 3.65; }
   #endif
-  enforceCellBasedSafetyCaps();
+    enforceCellBasedSafetyCaps();
+  }
 
   float minT = 150.0f, maxT = -99.0f;
   for (int i = 0; i < g_bms_count; i++) {
@@ -1324,7 +1332,7 @@ void calculateVictronData() {
   }
   
   if (count > 0) {
-    if (g_easy_mode && !g_expert_mode && !g_easy_auto_applied && first_proto_idx >= 0) {
+    if (completeSweep && g_easy_mode && !g_expert_mode && !g_easy_auto_applied && first_proto_idx >= 0) {
       TBSysParam sp;
       sp.cell_high_v = g_bms_sys_cell_high_v[first_proto_idx];
       sp.module_high_v = g_bms_sys_module_high_v[first_proto_idx];
@@ -1407,11 +1415,13 @@ void calculateVictronData() {
         if (bal_target < 40.0f) bal_target = 40.0f;
         if (bal_target > g_safe_volt) bal_target = g_safe_volt;
         bool reached_now = victronData.avgVoltage >= bal_target;
-        if (reached_now && !g_runtime_balance_reached_prev) {
-          g_auto_balance_last_ts = now_ts;
-          saveAutoBalanceTimestamp(g_auto_balance_last_ts);
+        if (completeSweep) {
+          if (reached_now && !g_runtime_balance_reached_prev) {
+            g_auto_balance_last_ts = now_ts;
+            saveAutoBalanceTimestamp(g_auto_balance_last_ts);
+          }
+          g_runtime_balance_reached_prev = reached_now;
         }
-        g_runtime_balance_reached_prev = reached_now;
 
         if (!reached_now && !g_maint_charge_mode) {
           const uint32_t window_s = 30UL * 24UL * 3600UL;
@@ -1428,7 +1438,13 @@ void calculateVictronData() {
     }
     
     victronData.maxChargeCurrent = safe_chg; victronData.maxDischargeCurrent = safe_dis;
-  } else { victronData.activePacks = 0; victronData.totalCurrent = 0; victronData.totalPower = 0; victronData.maxChargeCurrent = 0; victronData.maxDischargeCurrent = 0; g_runtime_proto_uv_hit = false; g_runtime_auto_balance_due = false; g_runtime_balance_reached_prev = false; alarm_flags |= 0x80; }
+  } else {
+    victronData.activePacks = 0; victronData.totalCurrent = 0; victronData.totalPower = 0;
+    victronData.maxChargeCurrent = 0; victronData.maxDischargeCurrent = 0;
+    g_runtime_proto_uv_hit = false; g_runtime_auto_balance_due = false;
+    if (completeSweep) g_runtime_balance_reached_prev = false;
+    alarm_flags |= 0x80;
+  }
 }
 
 void sendCanFrame(uint32_t id, uint8_t *data) {
@@ -1476,6 +1492,21 @@ void sendVictronCAN() {
   if(g_can_protocol == 1) { char n[] = "PYLON   "; sendCanFrame(0x35E, (uint8_t*)n); }
   else if(g_can_protocol == 2) { char n[] = "SMA     "; sendCanFrame(0x35E, (uint8_t*)n); }
   else { char n[] = "TOPBAND "; sendCanFrame(0x35E, (uint8_t*)n); } 
+}
+
+static void serviceCan() {
+  const unsigned long now = millis();
+  if (now - last_can_time < CAN_INTERVAL) return;
+  last_can_time = now;
+  const float previous_charge = victronData.maxChargeCurrent;
+  const float previous_discharge = victronData.maxDischargeCurrent;
+  calculateVictronData(!bms_sweep_in_progress);
+  if (bms_sweep_in_progress) {
+    // Partial sweeps can reduce existing limits, but cannot raise them.
+    victronData.maxChargeCurrent = fminf(victronData.maxChargeCurrent, previous_charge);
+    victronData.maxDischargeCurrent = fminf(victronData.maxDischargeCurrent, previous_discharge);
+  }
+  if (g_victron_enable) sendVictronCAN();
 }
 
 #ifdef MODE_SMART_WIFI
@@ -2721,6 +2752,7 @@ void setup() {
 
 void loop() {
   esp_task_wdt_reset(); 
+  serviceCan();
   unsigned long now = millis();
 
   static unsigned long last_led = 0;
@@ -2758,6 +2790,7 @@ void loop() {
 
   if (!g_rs485_service_busy && !simulation_active && (now - last_poll_time > POLL_INTERVAL)) {
     last_poll_time = now;
+    bms_sweep_in_progress = true;
     for (int i = 0; i < g_bms_count; i++) {
       esp_task_wdt_reset();
       String resp = "";
@@ -2774,17 +2807,14 @@ void loop() {
         addToLog("Timeout BMS " + String(i), true);
 #endif
       }
-      delay(BUS_GUARD_TIME);
+      const unsigned long guard_start = millis();
+      while (millis() - guard_start < BUS_GUARD_TIME) {
+        serviceCan();
+        delay(1);
+      }
     }
-  }
-  
-  if (now - last_can_time > 500) {
-    last_can_time = now;
+    bms_sweep_in_progress = false;
+    // Refresh the limits before another sweep can start, even if CAN is not due yet.
     calculateVictronData();
-    if (g_victron_enable) { sendVictronCAN(); }
   }
 }
-
-
-
-
