@@ -1156,12 +1156,19 @@ void parseTopband(String raw, int addr) {
   bms[addr].cell_count = cells; bms[addr].minCellV = minV; bms[addr].maxCellV = maxV;
   bms[addr].minCellIdx = minI; bms[addr].maxCellIdx = maxI; bms[addr].avgCellV = (cells > 0) ? vSum / cells : 0;
   if (p < blen) {
-    int t_cnt = b[p++]; if (t_cnt > 8) t_cnt = 8; bms[addr].temp_count = t_cnt;
-    float max_t = -99; for (int i = 0; i < t_cnt; i++) {
-      if (p + 1 >= blen) break; float t = (get_u16(b, p) - 2731) / 10.0;
-      if (t < -50 || t > 150) t = 25.0; bms[addr].temps[i] = t; if (t > max_t) max_t = t; p += 2;
+    int t_cnt = b[p++]; if (t_cnt > 8) t_cnt = 8;
+    float max_t = -99, sum_t = 0;
+    int samples = 0;
+    for (; samples < t_cnt && p + 1 < blen; samples++, p += 2) {
+      float t = (get_u16(b, p) - 2731) / 10.0;
+      if (t < -50 || t > 150) t = 25.0;
+      bms[addr].temps[samples] = t;
+      if (t > max_t) max_t = t;
+      sum_t += t;
     }
-    bms[addr].maxTemp = max_t; bms[addr].avgTemp = max_t; 
+    bms[addr].temp_count = samples;
+    bms[addr].maxTemp = max_t;
+    bms[addr].avgTemp = samples > 0 ? sum_t / samples : max_t;
   }
   if (p + 10 < blen) {
     float cur = get_s16(b, p) * 0.01; p += 2; float volt = get_u16(b, p) * 0.01; p += 2; float rem = get_u16(b, p) * 0.01; p += 3; float full = get_u16(b, p) * 0.01; p += 2;
@@ -1241,7 +1248,9 @@ void saveAutoBalanceTimestamp(uint32_t ts) {
 }
 
 void calculateVictronData() {
-  float sumI = 0, sumV = 0, sumSOC = 0, sumSOH = 0, sumT = 0, sumCap = 0, sumRem = 0;
+  float sumI = 0, sumV = 0, sumSOC = 0, sumSOH = 0, sumCap = 0, sumRem = 0;
+  double sumT = 0;
+  int temp_samples = 0;
   float proto_ccl_cap = 0, proto_dcl_cap = 0, proto_cvl_cap = 999.0f;
   bool proto_under_v_hit = false;
   int first_proto_idx = -1;
@@ -1252,7 +1261,7 @@ void calculateVictronData() {
   #endif
   enforceCellBasedSafetyCaps();
 
-  float t_check_val = 25.0; 
+  float minT = 150.0f, maxT = -99.0f;
   for (int i = 0; i < g_bms_count; i++) {
     bool on = bms[i].valid && (millis() - bms[i].last_seen < 60000);
     if (simulation_active) on = true;
@@ -1301,9 +1310,16 @@ void calculateVictronData() {
       }
       if(bms[i].voltage > g_safe_volt) { alarm_flags |= 0x02; sys_error_msg = "ALARM: PACK OVERVOLT"; }
       if(bms[i].maxCellV > g_safe_cell) { alarm_flags |= 0x02; sys_error_msg = "ALARM: CELL OVERVOLT"; }
-      if(g_temp_mode == 0) t_check_val = bms[i].maxTemp; else t_check_val = bms[i].avgTemp; 
+      if (bms[i].maxTemp > maxT) maxT = bms[i].maxTemp;
+      if (bms[i].maxTemp < minT) minT = bms[i].maxTemp;
+      for (int t = 0; t < bms[i].temp_count; t++) {
+        float temp = bms[i].temps[t];
+        if (temp < minT) minT = temp;
+        sumT += temp;
+      }
+      temp_samples += bms[i].temp_count;
       if((bms[i].maxCellV - bms[i].minCellV) > g_safe_drift) { alarm_flags |= 0x20; if(sys_error_msg == "OK") sys_error_msg = "WARN: CELL IMBALANCE"; }
-      sumI += bms[i].current; sumV += bms[i].voltage; sumSOC += bms[i].soc; sumSOH += bms[i].soh; sumT += bms[i].avgTemp; sumCap += bms[i].full_ah; sumRem += bms[i].rem_ah; count++;
+      sumI += bms[i].current; sumV += bms[i].voltage; sumSOC += bms[i].soc; sumSOH += bms[i].soh; sumCap += bms[i].full_ah; sumRem += bms[i].rem_ah; count++;
     }
   }
   
@@ -1337,12 +1353,17 @@ void calculateVictronData() {
 
     victronData.activePacks = count; victronData.totalCurrent = sumI; victronData.avgVoltage = sumV / count;
     victronData.totalPower = sumI * victronData.avgVoltage; victronData.avgSOC = sumSOC / count;
-    victronData.avgSOH = sumSOH / count; victronData.avgTemp = sumT / count; victronData.totalCapacity = sumCap; victronData.remainCapacity = sumRem;
+    victronData.avgSOH = sumSOH / count; victronData.avgTemp = temp_samples > 0 ? sumT / temp_samples : minT; victronData.totalCapacity = sumCap; victronData.remainCapacity = sumRem;
     
     float eff_tc_min = getEffectiveChargeMinTemp();
     float eff_td_min = getEffectiveDischargeMinTemp();
-    factor_charge = calcFactor(t_check_val, eff_tc_min, g_tc_max);
-    factor_discharge = calcFactor(t_check_val, eff_td_min, g_td_max);
+    if (g_temp_mode == 0) {
+      factor_charge = min(calcFactor(minT, eff_tc_min, g_tc_max), calcFactor(maxT, eff_tc_min, g_tc_max));
+      factor_discharge = min(calcFactor(minT, eff_td_min, g_td_max), calcFactor(maxT, eff_td_min, g_td_max));
+    } else {
+      factor_charge = calcFactor(victronData.avgTemp, eff_tc_min, g_tc_max);
+      factor_discharge = calcFactor(victronData.avgTemp, eff_td_min, g_td_max);
+    }
 
     float safe_chg = count * g_charge_amps * factor_charge;
     float safe_dis = count * g_discharge_amps * factor_discharge;
