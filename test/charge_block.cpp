@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <ctime>
@@ -6,6 +7,7 @@
 #include <string>
 
 using String = std::string;
+using std::min;
 
 unsigned long millis() { return 1000; }
 void delay(unsigned long) {}
@@ -55,12 +57,13 @@ int main() {
   bms[0].valid = true;
   bms[0].last_seen = millis();
   bms[0].cell_count = 15;
+  bms[0].temp_count = 1;
   bms[0].minCellV = bms[0].maxCellV = 3.35f;
   int failures = 0;
   for (const Case &test : cases) {
     bms[0].soc = test.soc;
     bms[0].voltage = test.voltage;
-    bms[0].maxTemp = bms[0].avgTemp = test.temp;
+    bms[0].temps[0] = bms[0].maxTemp = bms[0].avgTemp = test.temp;
     g_bms_alarm_bits[0] = test.bms_alarm;
     g_bms_alarm_last_seen[0] = millis();
     g_maint_charge_mode = test.maintenance;
