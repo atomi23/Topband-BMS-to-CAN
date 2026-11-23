@@ -14,15 +14,16 @@ with tempfile.TemporaryDirectory(prefix="can-cadence-") as directory:
         sketch = source.read_text()
         defines = re.findall(
             r"^#define (?:BOARD_\w+|MODE_\w+|MAX_BMS|RS485_BAUD|POLL_INTERVAL|RS485_TIMEOUT|"
-            r"BUS_GUARD_TIME|CAN_INTERVAL|HISTORY_INTERVAL|SD_LOG_INTERVAL|MQTT_INTERVAL|"
-            r"ALARM_POLL_INTERVAL|SYSPARAM_POLL_INTERVAL)\b[^\n]*", sketch, re.M
+            r"BUS_GUARD_TIME|CAN_INTERVAL|WDT_TIMEOUT|HISTORY_INTERVAL|SD_LOG_INTERVAL|MQTT_INTERVAL|"
+            r"ALARM_POLL_INTERVAL|SYSPARAM_POLL_INTERVAL|ALARM_REFRESH_TARGET|SYSPARAM_REFRESH_TARGET)\b[^\n]*",
+            sketch, re.M
         )
         commands = re.search(r"^const char \*POLL_CMDS\[\] = \{[^}]+\};", sketch, re.M)[0]
         (build / "sketch_config.h").write_text("\n".join([*defines, commands]))
         functions = []
-        for name in ("sendVictronCAN", "serviceCan", "rs485ExchangeFrame", "loop"):
+        for name in ("sendVictronCAN", "serviceCan", "rs485ExchangeFrame", "nextBmsWithTelemetry", "loop"):
             match = re.search(rf"^(?:static )?\w+ {name}\([^\n]*\) \{{.*?^\}}", sketch, re.M | re.S)
-            if match or name != "serviceCan":  # Absent on the unfixed sketch.
+            if match or name not in ("serviceCan", "nextBmsWithTelemetry"):
                 functions.append(match[0])
         (build / "sketch_paths.h").write_text("\n\n".join(functions))
         binary = build / "can_cadence"

@@ -57,8 +57,10 @@ static_assert(sizeof(POLL_CMDS) / sizeof(POLL_CMDS[0]) == MAX_BMS, "POLL_CMDS/MA
 #define SD_LOG_INTERVAL 60000
 #define MQTT_INTERVAL 5000
 #define MQTT_RETRY_MS 10000
-#define ALARM_POLL_INTERVAL 15000
-#define SYSPARAM_POLL_INTERVAL 30000
+#define ALARM_POLL_INTERVAL 15000UL
+#define SYSPARAM_POLL_INTERVAL 30000UL
+#define ALARM_REFRESH_TARGET 40000UL
+#define SYSPARAM_REFRESH_TARGET 200000UL
 #define TB_INFO_MAX 256
 
 #if defined(BOARD_LILYGO)
@@ -508,14 +510,21 @@ String tbBuildCommand(uint8_t addr, uint8_t cid2, const uint8_t *info, size_t in
 }
 
 bool rs485ExchangeFrame(const String &cmd, String &resp, uint32_t timeout_ms) {
+  static bool exchanged = false;
+  static unsigned long last_exchange_end = 0;
   if (g_rs485_service_busy) return false;
   g_rs485_service_busy = true;
+  esp_task_wdt_reset();
 
   bool ok = false;
   resp = "";
   resp.reserve(512);
 
   serviceCan();
+  while (exchanged && millis() - last_exchange_end < BUS_GUARD_TIME) {
+    serviceCan();
+    delay(1);
+  }
   #if defined(BOARD_WAVESHARE)
     digitalWrite(PIN_RS485_DIR, HIGH);
     delayMicroseconds(100);
@@ -552,6 +561,8 @@ bool rs485ExchangeFrame(const String &cmd, String &resp, uint32_t timeout_ms) {
     serviceCan();
   }
 
+  last_exchange_end = millis();
+  exchanged = true;
   g_rs485_service_busy = false;
   return ok && resp.length() > 0;
 }
@@ -2760,6 +2771,19 @@ void setup() {
 #endif
 }
 
+#ifdef MODE_SMART_WIFI
+static int nextBmsWithTelemetry(const bool *telemetry_replied, int &next) {
+  for (int offset = 0; offset < g_bms_count; ++offset) {
+    int pack = (next + offset) % g_bms_count;
+    if (telemetry_replied[pack]) {
+      next = (pack + 1) % g_bms_count;
+      return pack;
+    }
+  }
+  return -1;
+}
+#endif
+
 void loop() {
   esp_task_wdt_reset(); 
   serviceCan();
@@ -2769,6 +2793,7 @@ void loop() {
   if(now - last_led > 50) { last_led = now; handleLedStatus(); }
 
   #ifdef MODE_SMART_WIFI
+    static bool telemetry_replied[MAX_BMS] = {};
     server.handleClient();
     unsigned long now_hist = millis();
     if (now_hist - last_hist_time > HISTORY_INTERVAL) { last_hist_time = now_hist; updateHistory(); }
@@ -2776,18 +2801,6 @@ void loop() {
     if (g_sd_enable && (now_hist - last_sd_time > SD_LOG_INTERVAL)) { last_sd_time = now_hist; writeLogToSD(); }
     mqttReconnect();
     if (g_mqtt_enable && WiFi.status() == WL_CONNECTED && mqtt.connected()) { mqtt.loop(); if (now_hist - last_mqtt_time > MQTT_INTERVAL) { last_mqtt_time = now_hist; sendMqttData(); } }
-    if (!g_rs485_service_busy && !simulation_active && (now - last_alarm_poll_time > ALARM_POLL_INTERVAL)) {
-      last_alarm_poll_time = now;
-      pollBmsAlarmStatus(next_alarm_poll_bms);
-      next_alarm_poll_bms++;
-      if (next_alarm_poll_bms >= g_bms_count) next_alarm_poll_bms = 0;
-    }
-    if (!g_rs485_service_busy && !simulation_active && (now - last_sysparam_poll_time > SYSPARAM_POLL_INTERVAL)) {
-      last_sysparam_poll_time = now;
-      pollBmsSystemParameter(next_sysparam_poll_bms);
-      next_sysparam_poll_bms++;
-      if (next_sysparam_poll_bms >= g_bms_count) next_sysparam_poll_bms = 0;
-    }
   #endif
 
 #if HAS_M5_UI
@@ -2804,7 +2817,11 @@ void loop() {
     for (int i = 0; i < g_bms_count; i++) {
       esp_task_wdt_reset();
       String resp = "";
-      if (rs485ExchangeFrame(String(POLL_CMDS[i]), resp, RS485_TIMEOUT)) {
+      const bool replied = rs485ExchangeFrame(String(POLL_CMDS[i]), resp, RS485_TIMEOUT);
+      #ifdef MODE_SMART_WIFI
+        telemetry_replied[i] = replied;
+      #endif
+      if (replied) {
         // strip SOI '~' for legacy parser which expects hex payload without tilde
         int soi = resp.indexOf('~');
         if (soi >= 0) resp = resp.substring(soi + 1);
@@ -2817,11 +2834,25 @@ void loop() {
         addToLog("Timeout BMS " + String(i), true);
 #endif
       }
-      const unsigned long guard_start = millis();
-      while (millis() - guard_start < BUS_GUARD_TIME) {
-        serviceCan();
-        delay(1);
-      }
+      #ifdef MODE_SMART_WIFI
+        // Budget the whole rotation and service it between telemetry requests.
+        unsigned long aux_now = millis();
+        if (aux_now - last_alarm_poll_time >= min(ALARM_POLL_INTERVAL, ALARM_REFRESH_TARGET / g_bms_count)) {
+          int pack = nextBmsWithTelemetry(telemetry_replied, next_alarm_poll_bms);
+          if (pack >= 0) {
+            last_alarm_poll_time = aux_now;
+            pollBmsAlarmStatus(pack);
+          }
+        }
+        aux_now = millis();
+        if (aux_now - last_sysparam_poll_time >= min(SYSPARAM_POLL_INTERVAL, SYSPARAM_REFRESH_TARGET / g_bms_count)) {
+          int pack = nextBmsWithTelemetry(telemetry_replied, next_sysparam_poll_bms);
+          if (pack >= 0) {
+            last_sysparam_poll_time = aux_now;
+            pollBmsSystemParameter(pack);
+          }
+        }
+      #endif
     }
     bms_sweep_in_progress = false;
     // Refresh the limits before another sweep can start, even if CAN is not due yet.
