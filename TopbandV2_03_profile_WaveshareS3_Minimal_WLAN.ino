@@ -1103,8 +1103,15 @@ void addToLog(String msg, bool error) {
   #endif
 }
 
+// getLocalTime() waits up to 5 s for an NTP sync; the main loop must not block.
+bool readLocalTime(struct tm *t) {
+  time_t now = time(nullptr);
+  localtime_r(&now, t);
+  return t->tm_year > (2016 - 1900);
+}
+
 String getTimeStr() {
-  struct tm t; if (!getLocalTime(&t)) return String(millis() / 1000) + "s";
+  struct tm t; if (!readLocalTime(&t)) return String(millis() / 1000) + "s";
   char b[20]; strftime(b, sizeof(b), "%H:%M:%S", &t); return String(b);
 }
 
@@ -1532,7 +1539,7 @@ void calculateEnergy() {
   double h = (now - last_energy_calc) / 3600000.0; last_energy_calc = now;
   double kw = victronData.totalPower / 1000.0;
   if (kw > 0) daily_in[0] += (kw * h); else daily_out[0] += (fabs(kw) * h);
-  struct tm t; if (getLocalTime(&t)) { if (current_day != -1 && current_day != t.tm_mday) shiftHistory(); current_day = t.tm_mday; if (t.tm_hour == 0 && t.tm_min == 0 && t.tm_sec < 5) { if(now - last_flash_save > 60000) { saveHistory(false); last_flash_save = now; } } }
+  struct tm t; if (readLocalTime(&t)) { if (current_day != -1 && current_day != t.tm_mday) shiftHistory(); current_day = t.tm_mday; if (t.tm_hour == 0 && t.tm_min == 0 && t.tm_sec < 5) { if(now - last_flash_save > 60000) { saveHistory(false); last_flash_save = now; } } }
 }
 void updateHistory() { powerHistory[historyIdx] = (int16_t)victronData.totalPower; historyIdx++; if (historyIdx >= HISTORY_LEN) historyIdx = 0; }
 void initSD() {
@@ -2139,7 +2146,7 @@ void handleData() {
   j += "\"ab_last\": " + String(g_auto_balance_last_ts) + ", ";
   j += "\"easy\": " + String(g_easy_mode ? "true" : "false") + ", "; j += "\"setup_done\": " + String(g_setup_done ? "true" : "false") + ", ";
   j += "\"dummy\":0 }, ";
-  struct tm t; unsigned long ts = 0; if(getLocalTime(&t)) { time_t t_now; time(&t_now); ts = (unsigned long)t_now; }
+  struct tm t; unsigned long ts = 0; if(readLocalTime(&t)) { time_t t_now; time(&t_now); ts = (unsigned long)t_now; }
   j += "\"ts\": " + String(ts) + ", "; String l = debug_log; l.replace("\"", "'"); l.replace("\n", ""); j += "\"log\": \"" + l + "\", "; 
   if(!g_victron_enable) j += "\"can_status\": \"DISABLED\", \"can_error\": false, ";
   else j += "\"can_status\": \"" + debug_can_status + "\", \"can_error\": " + String(can_error_flag ? "true" : "false") + ", ";
@@ -2647,7 +2654,6 @@ void setup() {
         setLed(255, 0, 0); // Rot = Timeout
     } else {
         if (MDNS.begin(HOSTNAME)) MDNS.addService("http", "tcp", 80);
-        configTime(g_timezone_offset * 3600, 0, g_ntp_server.c_str());
         setLed(0, 255, 255); // Tuerkis = WiFi OK
     }
 
@@ -2706,7 +2712,9 @@ void setup() {
     g_mqtt_user = preferences.getString("mq_us", "");
     g_mqtt_pass = preferences.getString("mq_pw", "");
     g_ntp_server = preferences.getString("ntp", "pool.ntp.org"); g_timezone_offset = preferences.getInt("tz", 1);
+    g_ntp_server.trim(); if (g_ntp_server.length() == 0) g_ntp_server = "pool.ntp.org";
     preferences.end();
+    if (WiFi.status() == WL_CONNECTED) configTime(g_timezone_offset * 3600, 0, g_ntp_server.c_str());
     
     // 3. Init Services
     addToLog("System Start. Waiting for BMS...", false); 
