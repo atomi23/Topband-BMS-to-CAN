@@ -2133,12 +2133,12 @@ void handleData() {
   j += "\"t_mode\": " + String(g_temp_mode) + ", "; j += "\"s_drift\": " + String(g_safe_drift) + ", ";
   j += "\"debug\": " + String(g_serial_debug ? "true" : "false") + ", "; j += "\"spy\": " + String(g_sd_spy ? "true" : "false") + ", "; 
   j += "\"can_proto\": " + String(g_can_protocol) + ", "; j += "\"theme\": " + String(g_theme_id) + ", ";
-  j += "\"ntp\": \"" + g_ntp_server + "\", "; j += "\"tz\": " + String(g_timezone_offset) + ", ";
+  j += "\"ntp\": \"" + jsonEscape(g_ntp_server) + "\", "; j += "\"tz\": " + String(g_timezone_offset) + ", ";
   j += "\"sd\": " + String(g_sd_enable ? "true" : "false") + ", "; j += "\"vic_en\": " + String(g_victron_enable ? "true" : "false") + ", ";
   j += "\"mq_en\": " + String(g_mqtt_enable ? "true" : "false") + ", "; j += "\"mq_full\": " + String(g_mqtt_full ? "true" : "false") + ", ";
-  j += "\"ha_en\": " + String(g_ha_enable ? "true" : "false") + ", "; j += "\"mq_ip\": \"" + g_mqtt_server + "\", ";
-  j += "\"mq_pt\": " + String(g_mqtt_port) + ", "; j += "\"mq_us\": \"" + g_mqtt_user + "\", ";
-  j += "\"fw\": \"" + String(FW_VERSION) + "\", ";
+  j += "\"ha_en\": " + String(g_ha_enable ? "true" : "false") + ", "; j += "\"mq_ip\": \"" + jsonEscape(g_mqtt_server) + "\", ";
+  j += "\"mq_pt\": " + String(g_mqtt_port) + ", "; j += "\"mq_us\": \"" + jsonEscape(g_mqtt_user) + "\", ";
+  j += "\"fw\": \"" + jsonEscape(FW_VERSION) + "\", ";
   j += "\"soc_mode\": " + String(g_soc_source_mode) + ", ";
   j += "\"maint_en\": " + String(g_maint_charge_mode ? "true" : "false") + ", ";
   j += "\"maint_v\": " + String(g_maint_target_v, 2) + ", ";
@@ -2147,9 +2147,9 @@ void handleData() {
   j += "\"easy\": " + String(g_easy_mode ? "true" : "false") + ", "; j += "\"setup_done\": " + String(g_setup_done ? "true" : "false") + ", ";
   j += "\"dummy\":0 }, ";
   struct tm t; unsigned long ts = 0; if(readLocalTime(&t)) { time_t t_now; time(&t_now); ts = (unsigned long)t_now; }
-  j += "\"ts\": " + String(ts) + ", "; String l = debug_log; l.replace("\"", "'"); l.replace("\n", ""); j += "\"log\": \"" + l + "\", "; 
+  j += "\"ts\": " + String(ts) + ", "; j += "\"log\": \"" + jsonEscape(debug_log) + "\", ";
   if(!g_victron_enable) j += "\"can_status\": \"DISABLED\", \"can_error\": false, ";
-  else j += "\"can_status\": \"" + debug_can_status + "\", \"can_error\": " + String(can_error_flag ? "true" : "false") + ", ";
+  else j += "\"can_status\": \"" + jsonEscape(debug_can_status) + "\", \"can_error\": " + String(can_error_flag ? "true" : "false") + ", ";
   if(!HAS_SD_CARD) { j += "\"sd_ok\": false, \"sd_err\": false, "; } else { j += "\"sd_ok\": " + String(sd_ok ? "true" : "false") + ", \"sd_err\": " + String(sd_error_flag ? "true" : "false") + ", "; }
   j += "\"safe_lock\": " + String(((alarm_flags & 0x02) || (alarm_flags & 0x10) || (alarm_flags & 0x40) || (alarm_flags & 0x80)) ? "true" : "false") + ", ";
   j += "\"history\": ["; int startIdx = historyIdx; 
@@ -2168,7 +2168,7 @@ void handleData() {
       j += ", \"min_cell\":" + String(bms[i].minCellV, 3) + ", \"max_cell\":" + String(bms[i].maxCellV, 3);
       j += ", \"avg_temp\":" + String(bms[i].avgTemp, 1);
       j += ", \"temps\":[";
-      for (int t = 0; t < bms[i].temp_count; t++) { if (t > 0) j += ","; String lbl = "T" + String(t + 1); if (t == 4) lbl = "MOS"; if (t == 5) lbl = "ENV"; if (t == 6) lbl = "BAL"; j += "{\"val\":" + String(bms[i].temps[t], 1) + ",\"lbl\":\"" + lbl + "\"}"; }
+      for (int t = 0; t < bms[i].temp_count; t++) { if (t > 0) j += ","; String lbl = "T" + String(t + 1); if (t == 4) lbl = "MOS"; if (t == 5) lbl = "ENV"; if (t == 6) lbl = "BAL"; j += "{\"val\":" + String(bms[i].temps[t], 1) + ",\"lbl\":\"" + jsonEscape(lbl) + "\"}"; }
       j += "], \"cells\":["; for (int c = 0; c < bms[i].cell_count; c++) { if (c > 0) j += ","; j += String(bms[i].cells[c], 3); } j += "]";
     }
     j += "}";
