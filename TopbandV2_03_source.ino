@@ -1392,8 +1392,9 @@ void calculateVictronData(bool completeSweep = true) {
     if(factor_charge == 0.0) { alarm_flags |= 0x08; sys_error_msg = "INFO: TEMP CHARGE STOP"; }
     if(factor_discharge == 0.0) { alarm_flags |= 0x08; sys_error_msg = "INFO: TEMP DISCHG STOP"; }
     g_runtime_proto_uv_hit = proto_under_v_hit;
-    if(proto_under_v_hit) { alarm_flags |= 0x10; safe_dis = 0; if(sys_error_msg == "OK") sys_error_msg = "ALARM: PACK UNDERVOLT"; }
-    if( (alarm_flags & 0x02) || (alarm_flags & 0x10) || (alarm_flags & 0x40) ) { safe_chg = 0; safe_dis = 0; } 
+    if(proto_under_v_hit) { alarm_flags |= 0x10; if(sys_error_msg == "OK") sys_error_msg = "ALARM: PACK UNDERVOLT"; }
+    const bool hard_alarm = alarm_flags & (0x02 | 0x10 | 0x40);
+    const bool charge_blocked = hard_alarm || factor_charge == 0.0f;
     if (!g_maint_charge_mode) {
       if (victronData.avgSOC >= 99) safe_chg = count * 2.0;
       if (victronData.avgSOC == 100) safe_chg = 0.0;
@@ -1427,7 +1428,7 @@ void calculateVictronData(bool completeSweep = true) {
           const uint32_t window_s = 30UL * 24UL * 3600UL;
           if (g_auto_balance_last_ts == 0 || (now_ts > g_auto_balance_last_ts && (now_ts - g_auto_balance_last_ts) > window_s)) {
             g_runtime_auto_balance_due = true;
-            if (!(alarm_flags & 0x02) && !(alarm_flags & 0x10) && factor_charge > 0.0f) {
+            if (!charge_blocked) {
               float hold_chg = count * 2.0f;
               if (safe_chg < hold_chg) safe_chg = hold_chg;
               if (sys_error_msg == "OK") sys_error_msg = "INFO: AUTO BALANCE ACTIVE";
@@ -1437,7 +1438,8 @@ void calculateVictronData(bool completeSweep = true) {
       }
     }
     
-    victronData.maxChargeCurrent = safe_chg; victronData.maxDischargeCurrent = safe_dis;
+    victronData.maxChargeCurrent = charge_blocked ? 0.0f : safe_chg;
+    victronData.maxDischargeCurrent = hard_alarm ? 0.0f : safe_dis;
   } else {
     victronData.activePacks = 0; victronData.totalCurrent = 0; victronData.totalPower = 0;
     victronData.maxChargeCurrent = 0; victronData.maxDischargeCurrent = 0;
