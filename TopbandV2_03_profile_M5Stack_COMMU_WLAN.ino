@@ -2771,6 +2771,19 @@ void setup() {
 #endif
 }
 
+#ifdef MODE_SMART_WIFI
+static int nextBmsWithTelemetry(const bool *telemetry_replied, int &next) {
+  for (int offset = 0; offset < g_bms_count; ++offset) {
+    int pack = (next + offset) % g_bms_count;
+    if (telemetry_replied[pack]) {
+      next = (pack + 1) % g_bms_count;
+      return pack;
+    }
+  }
+  return -1;
+}
+#endif
+
 void loop() {
   esp_task_wdt_reset(); 
   serviceCan();
@@ -2780,6 +2793,7 @@ void loop() {
   if(now - last_led > 50) { last_led = now; handleLedStatus(); }
 
   #ifdef MODE_SMART_WIFI
+    static bool telemetry_replied[MAX_BMS] = {};
     server.handleClient();
     unsigned long now_hist = millis();
     if (now_hist - last_hist_time > HISTORY_INTERVAL) { last_hist_time = now_hist; updateHistory(); }
@@ -2803,7 +2817,11 @@ void loop() {
     for (int i = 0; i < g_bms_count; i++) {
       esp_task_wdt_reset();
       String resp = "";
-      if (rs485ExchangeFrame(String(POLL_CMDS[i]), resp, RS485_TIMEOUT)) {
+      const bool replied = rs485ExchangeFrame(String(POLL_CMDS[i]), resp, RS485_TIMEOUT);
+      #ifdef MODE_SMART_WIFI
+        telemetry_replied[i] = replied;
+      #endif
+      if (replied) {
         // strip SOI '~' for legacy parser which expects hex payload without tilde
         int soi = resp.indexOf('~');
         if (soi >= 0) resp = resp.substring(soi + 1);
@@ -2820,17 +2838,19 @@ void loop() {
         // Budget the whole rotation and service it between telemetry requests.
         unsigned long aux_now = millis();
         if (aux_now - last_alarm_poll_time >= min(ALARM_POLL_INTERVAL, ALARM_REFRESH_TARGET / g_bms_count)) {
-          last_alarm_poll_time = aux_now;
-          if (next_alarm_poll_bms >= g_bms_count) next_alarm_poll_bms = 0;
-          pollBmsAlarmStatus(next_alarm_poll_bms++);
-          if (next_alarm_poll_bms >= g_bms_count) next_alarm_poll_bms = 0;
+          int pack = nextBmsWithTelemetry(telemetry_replied, next_alarm_poll_bms);
+          if (pack >= 0) {
+            last_alarm_poll_time = aux_now;
+            pollBmsAlarmStatus(pack);
+          }
         }
         aux_now = millis();
         if (aux_now - last_sysparam_poll_time >= min(SYSPARAM_POLL_INTERVAL, SYSPARAM_REFRESH_TARGET / g_bms_count)) {
-          last_sysparam_poll_time = aux_now;
-          if (next_sysparam_poll_bms >= g_bms_count) next_sysparam_poll_bms = 0;
-          pollBmsSystemParameter(next_sysparam_poll_bms++);
-          if (next_sysparam_poll_bms >= g_bms_count) next_sysparam_poll_bms = 0;
+          int pack = nextBmsWithTelemetry(telemetry_replied, next_sysparam_poll_bms);
+          if (pack >= 0) {
+            last_sysparam_poll_time = aux_now;
+            pollBmsSystemParameter(pack);
+          }
         }
       #endif
     }

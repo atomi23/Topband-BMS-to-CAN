@@ -42,6 +42,7 @@ struct SerialStub {
   std::string pending;
   std::vector<Poll> polls;
   bool reply = false;
+  int offline_count = 0, auxiliary_pack = 0, offline_auxiliary_polls = 0;
   unsigned long reply_ms = 0, auxiliary_ms = 0, ready_us = 0;
   void print(const String &command) {
     polls.push_back({command, clock_us, 0, 0});
@@ -51,7 +52,15 @@ struct SerialStub {
     if (!auxiliary) clock_us += polls.back().command.size() * 10 * 1000000 / RS485_BAUD;
     polls.back().done_us = clock_us;
     ready_us = clock_us + (auxiliary ? auxiliary_ms : reply_ms) * 1000;
-    if (reply) pending = "~1234\r";
+    int pack = auxiliary ? auxiliary_pack : -1;
+    if (!auxiliary && offline_count > 0) {
+      for (int i = MAX_BMS - offline_count; i < MAX_BMS; ++i) {
+        if (polls.back().command == POLL_CMDS[i]) pack = i;
+      }
+    }
+    const bool offline = pack >= MAX_BMS - offline_count;
+    if (auxiliary && offline) ++offline_auxiliary_polls;
+    if (reply && !offline) pending = "~1234\r";
   }
   bool available() const { return !pending.empty() && clock_us >= ready_us; }
   char read() {
@@ -62,7 +71,8 @@ struct SerialStub {
   }
 } RS485;
 
-constexpr int g_bms_count = 12;
+constexpr int test_pack_count = 12;
+int g_bms_count = test_pack_count;
 unsigned long last_poll_time, last_can_time, last_hist_time, last_sd_time, last_mqtt_time;
 unsigned long last_alarm_poll_time, last_sysparam_poll_time;
 int next_alarm_poll_bms, next_sysparam_poll_bms;
@@ -85,15 +95,17 @@ void mqttReconnect() {}
 void sendMqttData() {}
 bool rs485ExchangeFrame(const String &cmd, String &resp, uint32_t timeout_ms);
 static bool simulate_auxiliary;
-static std::vector<unsigned long> alarm_refreshes[g_bms_count], sysparam_refreshes[g_bms_count];
+static std::vector<unsigned long> alarm_refreshes[MAX_BMS], sysparam_refreshes[MAX_BMS];
 void pollBmsAlarmStatus(int pack) {
   String response;
+  RS485.auxiliary_pack = pack;
   if (simulate_auxiliary && rs485ExchangeFrame("alarm", response, RS485_TIMEOUT + 200)) {
     alarm_refreshes[pack].push_back(millis());
   }
 }
 void pollBmsSystemParameter(int pack) {
   String response;
+  RS485.auxiliary_pack = pack;
   if (simulate_auxiliary && rs485ExchangeFrame("system", response, RS485_TIMEOUT + 200)) {
     sysparam_refreshes[pack].push_back(millis());
   }
@@ -118,7 +130,7 @@ void sendCanFrame(uint32_t id, uint8_t *data) {
 }
 bool last_pack_alarm;
 void calculateVictronData(bool = true) {
-  const auto limit = last_pack_alarm && parsed.size() == g_bms_count ? 0.0f : 10.0f * parsed.size();
+  const auto limit = last_pack_alarm && parsed.size() == static_cast<size_t>(g_bms_count) ? 0.0f : 10.0f * parsed.size();
   victronData.maxChargeCurrent = victronData.maxDischargeCurrent = limit;
 }
 
@@ -132,6 +144,7 @@ void resetTest(bool reply) {
   max_watchdog_gap_ms = 0;
   last_can_time = 0;
   last_alarm_poll_time = last_sysparam_poll_time = 0;
+  g_bms_count = test_pack_count;
   RS485 = SerialStub{};
   RS485.reply = reply;
   parsed.clear();
@@ -142,7 +155,7 @@ void resetTest(bool reply) {
 }
 
 void runSweep() {
-  while (RS485.polls.size() < g_bms_count && millis() < 30000) {
+  while (RS485.polls.size() < test_pack_count && millis() < 30000) {
     loop();
     delay(1);
   }
@@ -153,9 +166,9 @@ bool testSweep(bool reply) {
   constexpr uint32_t ids[] = {0x351, 0x355, 0x356, 0x35A, 0x35E};
   resetTest(reply);
   runSweep();
-  bool polls_ok = RS485.polls.size() == g_bms_count;
-  bool parses_ok = payload_ok && parsed.size() == (reply ? g_bms_count : 0);
-  for (size_t i = 0; i < RS485.polls.size() && i < g_bms_count; ++i) {
+  bool polls_ok = RS485.polls.size() == test_pack_count;
+  bool parses_ok = payload_ok && parsed.size() == (reply ? test_pack_count : 0);
+  for (size_t i = 0; i < RS485.polls.size() && i < test_pack_count; ++i) {
     polls_ok &= RS485.polls[i].command == POLL_CMDS[i];
     if (i > 0) {
       const auto receive_ms = reply ? 0 : RS485_TIMEOUT;
@@ -192,7 +205,7 @@ bool testStartupLimits(bool late_alarm) {
   runSweep();
   bool stayed_blocked = true;
   for (const auto &frame : frames) {
-    if (frame.id == 0x351 && frame.packs < g_bms_count) {
+    if (frame.id == 0x351 && frame.packs < test_pack_count) {
       stayed_blocked &= frame.charging == 0 && frame.discharging == 0;
     }
   }
@@ -251,10 +264,13 @@ struct RefreshAge {
   }
 };
 
-bool testRefresh(unsigned long primary_reply_ms, unsigned long aux_ms) {
+bool testRefresh(unsigned long primary_reply_ms, unsigned long aux_ms,
+                 int packs = test_pack_count, int offline_count = 0) {
   resetTest(true);
+  g_bms_count = packs;
   RS485.reply_ms = primary_reply_ms;
   RS485.auxiliary_ms = aux_ms;
+  RS485.offline_count = offline_count;
   simulate_auxiliary = true;
   next_alarm_poll_bms = next_sysparam_poll_bms = 0;
   for (int pack = 0; pack < g_bms_count; ++pack) {
@@ -272,13 +288,15 @@ bool testRefresh(unsigned long primary_reply_ms, unsigned long aux_ms) {
   for (size_t i = 0; i < RS485.polls.size(); ++i) {
     const auto &poll = RS485.polls[i];
     if (!isAuxiliary(poll.command)) primary.push_back(&poll);
-    if (i > 0) {
+    if (i > 0 && RS485.polls[i - 1].end_us > 0) {
       min_idle_ms = std::min(min_idle_ms, poll.start_us / 1000 - RS485.polls[i - 1].end_us / 1000);
     }
   }
   for (int pack = 0; pack < g_bms_count; ++pack) {
-    alarms.measure(alarm_refreshes[pack]);
-    sysparams.measure(sysparam_refreshes[pack]);
+    if (pack < packs - offline_count) {
+      alarms.measure(alarm_refreshes[pack]);
+      sysparams.measure(sysparam_refreshes[pack]);
+    }
     std::vector<unsigned long> polls;
     for (size_t i = pack; i < primary.size(); i += g_bms_count) {
       poll_order &= primary[i]->command == POLL_CMDS[pack];
@@ -287,18 +305,37 @@ bool testRefresh(unsigned long primary_reply_ms, unsigned long aux_ms) {
     telemetry.measure(polls, polls.empty() ? 0 : polls.front());
   }
   const auto tx_ms = (std::strlen(POLL_CMDS[0]) * 10 * 1000 + RS485_BAUD - 1) / RS485_BAUD;
-  const auto primary_budget = g_bms_count * (BUS_GUARD_TIME + primary_reply_ms + tx_ms + 7);
-  const auto auxiliary_budget = 4 * (aux_ms + BUS_GUARD_TIME + 5);
+  const auto primary_budget = packs * (BUS_GUARD_TIME + tx_ms + 7)
+      + (packs - offline_count) * primary_reply_ms + offline_count * RS485_TIMEOUT;
+  const auto auxiliary_budget = (offline_count ? 8 : 4) * (aux_ms + BUS_GUARD_TIME + 5);
   const auto telemetry_limit = std::max(POLL_INTERVAL + 1ul, primary_budget + 1) + auxiliary_budget;
   const bool telemetry_ok = poll_order && payload_ok && telemetry.max_ms <= telemetry_limit;
   const bool guard_ok = min_idle_ms >= BUS_GUARD_TIME;
-  const bool ok = alarms.within(60000) && sysparams.within(300000) && telemetry_ok && guard_ok;
-  std::printf("12 packs (%lu ms telemetry reply, %lu ms auxiliary exchange): "
+  const int offline_auxiliary_polls = RS485.offline_auxiliary_polls;
+  const bool ok = alarms.within(60000) && sysparams.within(300000) && telemetry_ok && guard_ok
+      && offline_auxiliary_polls == 0;
+  std::printf("%d packs (%d offline, %lu ms telemetry reply, %lu ms auxiliary exchange): "
               "max per-pack refresh ages: alarm %lu/60000 ms, system params %lu/300000 ms; "
-              "telemetry max %lu/%lu ms; RS485 min idle %lu/%u ms [%s]\n",
-              primary_reply_ms, aux_ms, alarms.max_ms, sysparams.max_ms,
-              telemetry.max_ms, telemetry_limit, min_idle_ms, BUS_GUARD_TIME, ok ? "PASS" : "FAIL");
-  return ok;
+              "telemetry max %lu/%lu ms; RS485 min idle %lu/%u ms; "
+              "auxiliary polls to offline packs %d [%s]\n",
+              packs, offline_count, primary_reply_ms, aux_ms, alarms.max_ms, sysparams.max_ms,
+              telemetry.max_ms, telemetry_limit, min_idle_ms, BUS_GUARD_TIME,
+              offline_auxiliary_polls, ok ? "PASS" : "FAIL");
+  if (!offline_count) return ok;
+
+  RS485.offline_count = 0;
+  const auto recovered_at = millis();
+  while (millis() - recovered_at < 300000) {
+    loop();
+    delay(1);
+  }
+  int recovered = 0;
+  for (int pack = packs - offline_count; pack < packs; ++pack) {
+    if (!alarm_refreshes[pack].empty() && !sysparam_refreshes[pack].empty()) ++recovered;
+  }
+  std::printf("Packs resuming both auxiliary polls after recovery: %d/%d [%s]\n",
+              recovered, offline_count, recovered == offline_count ? "PASS" : "FAIL");
+  return ok && recovered == offline_count;
 }
 
 int main() {
@@ -309,6 +346,7 @@ int main() {
   const bool diagnosis_watchdog = testDiagnosticWatchdog();
   const bool immediate_refresh = testRefresh(0, 0);
   const bool delayed_refresh = testRefresh(150, 150);
+  const bool mixed_refresh = testRefresh(150, 150, MAX_BMS, 3);
   return replying && timeouts && startup_healthy && startup_alarm && diagnosis_watchdog
-      && immediate_refresh && delayed_refresh ? 0 : 1;
+      && immediate_refresh && delayed_refresh && mixed_refresh ? 0 : 1;
 }
