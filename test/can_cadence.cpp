@@ -25,7 +25,11 @@ unsigned long millis() { return clock_us / 1000; }
 void delay(unsigned long ms) { clock_us += ms * 1000; }
 void delayMicroseconds(unsigned long us) { clock_us += us; }
 void yield() {}
-void esp_task_wdt_reset() {}
+static unsigned long last_watchdog_reset_ms, max_watchdog_gap_ms;
+void esp_task_wdt_reset() {
+  max_watchdog_gap_ms = std::max(max_watchdog_gap_ms, millis() - last_watchdog_reset_ms);
+  last_watchdog_reset_ms = millis();
+}
 enum { PIN_RS485_DIR, HIGH, LOW };
 void digitalWrite(int, int) {}
 
@@ -125,6 +129,8 @@ void resetTest(bool reply) {
   // Start the first sweep when the original loop also has a CAN cycle due.
   last_poll_time = 5;
   clock_us = last_poll_time * 1000;
+  last_watchdog_reset_ms = millis();
+  max_watchdog_gap_ms = 0;
   last_can_time = 0;
   last_alarm_poll_time = last_sysparam_poll_time = 0;
   RS485 = SerialStub{};
@@ -213,6 +219,27 @@ bool testStartupLimits(bool late_alarm) {
   return ok;
 }
 
+bool testDiagnosticWatchdog() {
+  resetTest(false);
+  constexpr unsigned long watchdog_ms = WDT_TIMEOUT * 1000ul;
+  const auto start = millis();
+  // Manufacturer, date, alarms, parameters, history, analog.
+  constexpr size_t request_info_bytes[] = {0, 0, 1, 0, 2, 1};
+  bool responses_ok = true;
+  for (auto info_bytes : request_info_bytes) {
+    RS485.reply = RS485.polls.size() == 5;
+    const String command(std::string(18 + 2 * info_bytes, 'x').c_str());
+    String response;
+    responses_ok &= rs485ExchangeFrame(command, response, RS485_TIMEOUT + 200) == RS485.reply;
+  }
+  const auto elapsed_ms = millis() - start;
+  esp_task_wdt_reset();
+  const bool ok = responses_ok && elapsed_ms >= watchdog_ms && max_watchdog_gap_ms < watchdog_ms;
+  std::printf("BMS diagnosis (5 timeouts, 1 reply): %lu ms total, max watchdog gap %lu/%lu ms [%s]\n",
+              elapsed_ms, max_watchdog_gap_ms, watchdog_ms, ok ? "PASS" : "FAIL");
+  return ok;
+}
+
 struct RefreshAge {
   unsigned long max_ms = 0;
   bool within(unsigned long limit_ms) const { return max_ms < limit_ms; }
@@ -282,9 +309,10 @@ int main() {
   const bool timeouts = testSweep(false);
   const bool startup_healthy = testStartupLimits(false);
   const bool startup_alarm = testStartupLimits(true);
+  const bool diagnosis_watchdog = testDiagnosticWatchdog();
   const bool immediate_refresh = testRefresh(0, 0);
   const bool delayed_refresh = testRefresh(150, 150);
   const bool unsynced_refresh = testRefresh(150, 150, 5010);
-  return replying && timeouts && startup_healthy && startup_alarm
+  return replying && timeouts && startup_healthy && startup_alarm && diagnosis_watchdog
       && immediate_refresh && delayed_refresh && unsynced_refresh ? 0 : 1;
 }

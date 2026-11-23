@@ -514,6 +514,7 @@ bool rs485ExchangeFrame(const String &cmd, String &resp, uint32_t timeout_ms) {
   static unsigned long last_exchange_end = 0;
   if (g_rs485_service_busy) return false;
   g_rs485_service_busy = true;
+  esp_task_wdt_reset();
 
   bool ok = false;
   resp = "";

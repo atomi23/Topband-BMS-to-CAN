@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory(prefix="can-cadence-") as directory:
         sketch = source.read_text()
         defines = re.findall(
             r"^#define (?:BOARD_\w+|MODE_\w+|MAX_BMS|RS485_BAUD|POLL_INTERVAL|RS485_TIMEOUT|"
-            r"BUS_GUARD_TIME|CAN_INTERVAL|HISTORY_INTERVAL|SD_LOG_INTERVAL|MQTT_INTERVAL|"
+            r"BUS_GUARD_TIME|CAN_INTERVAL|WDT_TIMEOUT|HISTORY_INTERVAL|SD_LOG_INTERVAL|MQTT_INTERVAL|"
             r"ALARM_POLL_INTERVAL|SYSPARAM_POLL_INTERVAL|ALARM_REFRESH_TARGET|SYSPARAM_REFRESH_TARGET)\b[^\n]*",
             sketch, re.M
         )
